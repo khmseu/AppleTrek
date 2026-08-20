@@ -9,6 +9,8 @@ import {
 
 export const GRID_SIZE = 8;
 export const GRID_CELLS = GRID_SIZE * GRID_SIZE;
+// Galaxy has one encoded record per quadrant in the same 8x8 topology.
+export const GALAXY_CELLS = GRID_SIZE * GRID_SIZE;
 
 const START_STARDATE = 3424;
 const END_STARDATE = 3427;

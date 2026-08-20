@@ -1,47 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
 import { evaluateMissionOutcome, runScriptedReplay } from "../src/state";
-import { createInitialGameState, type GameState } from "../src/state/gameState";
+import { type GameState } from "../src/state/gameState";
 import { createCommandSession, createOverlayViewModel, dispatchPrompt } from "../src/ui";
-
-function makeState(overrides?: Partial<GameState>): GameState {
-  const base = createInitialGameState(1701);
-  return {
-    ...base,
-    ...overrides,
-    clock: {
-      ...base.clock,
-      ...(overrides?.clock ?? {})
-    },
-    ship: {
-      ...base.ship,
-      ...(overrides?.ship ?? {})
-    },
-    position: {
-      ...base.position,
-      ...(overrides?.position ?? {})
-    },
-    mission: {
-      ...base.mission,
-      ...(overrides?.mission ?? {})
-    },
-    counts: {
-      ...base.counts,
-      ...(overrides?.counts ?? {})
-    },
-    endgame: {
-      ...base.endgame,
-      ...(overrides?.endgame ?? {})
-    },
-    galaxy: overrides?.galaxy ?? [...base.galaxy],
-    sector: overrides?.sector ?? [...base.sector],
-    damage: overrides?.damage ?? [...base.damage]
-  };
-}
+import { makeTestState } from "./helpers/testState";
 
 describe("Phase 6 mission bulletin outcomes", () => {
   it("produces a successful mission bulletin when all klingons are eliminated", () => {
-    const state = makeState({
+    const state = makeTestState({
       counts: {
         initialKlingons: 30,
         klingonsRemaining: 0,
@@ -62,7 +28,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("produces a failed mission bulletin when mission deadline has passed", () => {
-    const state = makeState({
+    const state = makeTestState({
       mission: {
         startStardate: 3424,
         endStardate: 3427
@@ -87,7 +53,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("produces a failed mission bulletin when the ship is destroyed", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 0,
         energyMax: 5000,
@@ -111,7 +77,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("returns null while mission is ongoing and no terminal conditions are met", () => {
-    const state = makeState({
+    const state = makeTestState({
       clock: {
         stardate: 3426,
         ticks: 99
@@ -144,7 +110,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("treats mission deadline boundary as active at exact end stardate tick 0", () => {
-    const state = makeState({
+    const state = makeTestState({
       mission: {
         startStardate: 3424,
         endStardate: 3427
@@ -165,7 +131,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("expires mission when stardate is at deadline but ticks are greater than zero", () => {
-    const state = makeState({
+    const state = makeTestState({
       mission: {
         startStardate: 3424,
         endStardate: 3427
@@ -187,7 +153,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
   });
 
   it("honors explicit self-destruct reason precedence when klingons are already zero", () => {
-    const state = makeState({
+    const state = makeTestState({
       counts: {
         initialKlingons: 30,
         klingonsRemaining: 0,
@@ -209,7 +175,7 @@ describe("Phase 6 mission bulletin outcomes", () => {
 
 describe("Phase 6 self-destruct path", () => {
   it("transitions session state to terminal mission state via self-destruct command", () => {
-    const session = createCommandSession(makeState());
+    const session = createCommandSession(makeTestState());
     const afterDestruct = dispatchPrompt(session, "DESTRUCT", new SeededRng(99));
 
     expect(afterDestruct.state.endgame.terminal).toBe(true);
@@ -260,7 +226,7 @@ describe("Phase 6 deterministic replay harness", () => {
 
 describe("Phase 6 overlay view-model hooks", () => {
   it("provides a stable view-model shape for key UI fields", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 4321,
         energyMax: 5000,

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  createInitialGameState,
   coordToIndex1Based,
   type GameState
 } from "../src/state/gameState";
@@ -11,37 +10,7 @@ import {
   setShieldsPercent,
   stepMovement
 } from "../src/state/navigation";
-
-function makeState(overrides?: Partial<GameState>): GameState {
-  const base = createInitialGameState(1701);
-  return {
-    ...base,
-    ...overrides,
-    clock: {
-      ...base.clock,
-      ...(overrides?.clock ?? {})
-    },
-    ship: {
-      ...base.ship,
-      ...(overrides?.ship ?? {})
-    },
-    position: {
-      ...base.position,
-      ...(overrides?.position ?? {})
-    },
-    mission: {
-      ...base.mission,
-      ...(overrides?.mission ?? {})
-    },
-    counts: {
-      ...base.counts,
-      ...(overrides?.counts ?? {})
-    },
-    galaxy: overrides?.galaxy ?? [...base.galaxy],
-    sector: overrides?.sector ?? [...base.sector],
-    damage: overrides?.damage ?? [...base.damage]
-  };
-}
+import { makeTestState } from "./helpers/testState";
 
 describe("courseToVector", () => {
   it("matches known cardinal approximations", () => {
@@ -78,7 +47,7 @@ describe("courseToVector", () => {
 
 describe("stepMovement", () => {
   it("moves within sector bounds without quadrant change", () => {
-    const state = makeState({
+    const state = makeTestState({
       position: {
         quadrantIndex: 28,
         quadrant: { row: 4, col: 4 },
@@ -94,7 +63,7 @@ describe("stepMovement", () => {
   });
 
   it("transitions and wraps quadrant coordinates on sector boundary", () => {
-    const state = makeState({
+    const state = makeTestState({
       position: {
         quadrantIndex: 64,
         quadrant: { row: 8, col: 8 },
@@ -112,7 +81,7 @@ describe("stepMovement", () => {
 
 describe("advanceTime", () => {
   it("increments stardate and rolls over ticks at 100", () => {
-    const state = makeState({ clock: { stardate: 3424, ticks: 95 } });
+    const state = makeTestState({ clock: { stardate: 3424, ticks: 95 } });
 
     const next = advanceTime(state, 15);
 
@@ -121,7 +90,7 @@ describe("advanceTime", () => {
   });
 
   it("applies baseline recharge and shield drift toward target", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 4900,
         energyMax: 5000,
@@ -141,7 +110,7 @@ describe("advanceTime", () => {
 
 describe("phase 3 command handlers", () => {
   it("setShieldsPercent updates shield target energy deterministically", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 5000,
         energyMax: 5000,
@@ -159,7 +128,7 @@ describe("phase 3 command handlers", () => {
   });
 
   it("navigate applies ion energy cost, movement, and time progression", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 4000,
         energyMax: 5000,
@@ -189,7 +158,7 @@ describe("phase 3 command handlers", () => {
   });
 
   it("navigate applies warp cubic energy cost deterministically", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 3000,
         energyMax: 5000,
@@ -218,7 +187,7 @@ describe("phase 3 command handlers", () => {
   });
 
   it("rejects invalid course inputs in navigate", () => {
-    const state = makeState();
+    const state = makeTestState();
 
     expect(() => navigate(state, { mode: "ion", course: Number.NaN, value: 1 })).toThrow(
       "Invalid navigation course"
@@ -232,7 +201,7 @@ describe("phase 3 command handlers", () => {
   });
 
   it("throws for invalid value and insufficient energy", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 10,
         energyMax: 5000,
@@ -252,13 +221,13 @@ describe("phase 3 command handlers", () => {
   });
 
   it("rebuilds destination sector coherently on quadrant transitions", () => {
-    const start = makeState();
+    const start = makeTestState();
     const destinationQuadrantIndex = coordToIndex1Based(4, 1);
     const destinationEncoded = 312;
     const galaxy = [...start.galaxy];
     galaxy[destinationQuadrantIndex - 1] = destinationEncoded;
 
-    const state = makeState({
+    const state = makeTestState({
       galaxy,
       position: {
         quadrantIndex: coordToIndex1Based(4, 8),

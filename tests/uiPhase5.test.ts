@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
 import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
-import { createInitialGameState, coordToIndex1Based, type GameState } from "../src/state/gameState";
+import { coordToIndex1Based, type GameState } from "../src/state/gameState";
 import { navigate } from "../src/state/navigation";
 import {
   CONTROL_ACTIONS,
@@ -19,37 +19,8 @@ import {
   renderSectorPanel,
   renderStatusPanel
 } from "../src/ui";
-
-function makeState(overrides?: Partial<GameState>): GameState {
-  const base = createInitialGameState(1701);
-  return {
-    ...base,
-    ...overrides,
-    clock: {
-      ...base.clock,
-      ...(overrides?.clock ?? {})
-    },
-    ship: {
-      ...base.ship,
-      ...(overrides?.ship ?? {})
-    },
-    position: {
-      ...base.position,
-      ...(overrides?.position ?? {})
-    },
-    mission: {
-      ...base.mission,
-      ...(overrides?.mission ?? {})
-    },
-    counts: {
-      ...base.counts,
-      ...(overrides?.counts ?? {})
-    },
-    galaxy: overrides?.galaxy ?? [...base.galaxy],
-    sector: overrides?.sector ?? [...base.sector],
-    damage: overrides?.damage ?? [...base.damage]
-  };
-}
+import { makeTestState } from "./helpers/testState";
+import { makeSingleKlingonCombatFixture } from "./helpers/fixtures";
 
 describe("Phase 5 prompt parsing", () => {
   it("formats parsed commands as exact prompt/log strings", () => {
@@ -105,13 +76,13 @@ describe("Phase 5 prompt parsing", () => {
 
 describe("Phase 5 dispatcher error paths", () => {
   it("throws for empty prompt", () => {
-    const session = createCommandSession(makeState());
+    const session = createCommandSession(makeTestState());
     expect(() => dispatchPrompt(session, "   ", new SeededRng(1))).toThrow(RangeError);
     expect(() => dispatchPrompt(session, "   ", new SeededRng(1))).toThrow(/Empty command/);
   });
 
   it("throws for arity mismatch", () => {
-    const session = createCommandSession(makeState());
+    const session = createCommandSession(makeTestState());
     expect(() => dispatchPrompt(session, "SHIELDS 10 20", new SeededRng(1))).toThrow(RangeError);
     expect(() => dispatchPrompt(session, "SHIELDS 10 20", new SeededRng(1))).toThrow(
       /Expected 1 arguments for SHIELDS/
@@ -119,13 +90,13 @@ describe("Phase 5 dispatcher error paths", () => {
   });
 
   it("throws for non-integer args", () => {
-    const session = createCommandSession(makeState());
+    const session = createCommandSession(makeTestState());
     expect(() => dispatchPrompt(session, "TORPEDO 3.14", new SeededRng(1))).toThrow(RangeError);
     expect(() => dispatchPrompt(session, "TORPEDO 3.14", new SeededRng(1))).toThrow(/Invalid course/);
   });
 
   it("throws for unknown command", () => {
-    const session = createCommandSession(makeState());
+    const session = createCommandSession(makeTestState());
     expect(() => dispatchPrompt(session, "LASER 100", new SeededRng(1))).toThrow(RangeError);
     expect(() => dispatchPrompt(session, "LASER 100", new SeededRng(1))).toThrow(/Unknown command: LASER/);
   });
@@ -133,7 +104,7 @@ describe("Phase 5 dispatcher error paths", () => {
 
 describe("Phase 5 command routing", () => {
   it("routes ion navigation through navigation module behavior", () => {
-    const state = makeState({
+    const state = makeTestState({
       ship: {
         energy: 4000,
         energyMax: 5000,
@@ -163,35 +134,7 @@ describe("Phase 5 command routing", () => {
   });
 
   it("routes phasers through combat module behavior", () => {
-    const sector = Array.from({ length: 64 }, () => 0);
-    const shipIndex = coordToIndex1Based(4, 4);
-    const klingonIndex = coordToIndex1Based(4, 6);
-    sector[shipIndex - 1] = 1;
-    sector[klingonIndex - 1] = -180;
-
-    const state = makeState({
-      ship: {
-        energy: 3000,
-        energyMax: 5000,
-        shieldEnergy: 1500,
-        shieldsPercent: 50,
-        torpedoes: 10,
-        torpedoesMax: 10
-      },
-      sector,
-      counts: {
-        initialKlingons: 1,
-        klingonsRemaining: 1,
-        initialBases: 0,
-        basesRemaining: 0
-      },
-      position: {
-        quadrantIndex: coordToIndex1Based(4, 4),
-        quadrant: { row: 4, col: 4 },
-        sectorIndex: shipIndex,
-        sector: { row: 4, col: 4 }
-      }
-    });
+    const state = makeSingleKlingonCombatFixture().state;
 
     const expectedRng = new SeededRng(11);
     const expectedAfterPhasers = firePhasers(state, 800, expectedRng).state;
@@ -204,35 +147,7 @@ describe("Phase 5 command routing", () => {
   });
 
   it("routes torpedo through combat module behavior including enemy turn", () => {
-    const sector = Array.from({ length: 64 }, () => 0);
-    const shipIndex = coordToIndex1Based(4, 4);
-    const klingonIndex = coordToIndex1Based(4, 6);
-    sector[shipIndex - 1] = 1;
-    sector[klingonIndex - 1] = -180;
-
-    const state = makeState({
-      ship: {
-        energy: 3000,
-        energyMax: 5000,
-        shieldEnergy: 1500,
-        shieldsPercent: 50,
-        torpedoes: 10,
-        torpedoesMax: 10
-      },
-      sector,
-      counts: {
-        initialKlingons: 1,
-        klingonsRemaining: 1,
-        initialBases: 0,
-        basesRemaining: 0
-      },
-      position: {
-        quadrantIndex: coordToIndex1Based(4, 4),
-        quadrant: { row: 4, col: 4 },
-        sectorIndex: shipIndex,
-        sector: { row: 4, col: 4 }
-      }
-    });
+    const state = makeSingleKlingonCombatFixture().state;
 
     const expectedRng = new SeededRng(11);
     const expectedAfterTorpedo = fireTorpedo(state, 90).state;
@@ -247,7 +162,7 @@ describe("Phase 5 command routing", () => {
 
 describe("Phase 5 retro panel rendering", () => {
   it("renders status panel shape with mission and ship fields", () => {
-    const state = makeState();
+    const state = makeTestState();
     const status = renderStatusPanel(state);
 
     expect(status).toContain("STATUS");
@@ -260,7 +175,7 @@ describe("Phase 5 retro panel rendering", () => {
   });
 
   it("renders an 8x8 textual sector grid", () => {
-    const state = makeState();
+    const state = makeTestState();
     const panel = renderSectorPanel(state);
 
     expect(panel).toContain("SECTOR");
@@ -357,7 +272,7 @@ describe("Phase 5 clickable control parity", () => {
   });
 
   it("dispatches button controls through the same command execution path", () => {
-    const start = makeState({
+    const start = makeTestState({
       ship: {
         energy: 4000,
         energyMax: 5000,
