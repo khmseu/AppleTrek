@@ -92,6 +92,7 @@ export interface EndgameState {
  * `quadrantSize` describe the active dimensions for variable-size test states;
  * callers should prefer those fields over default constants whenever a
  * `GameState` is available.
+ * Source: apple_trek.bas lines 9060, 9055, 150-230, and 9005-9065.
  */
 export interface GameState {
   sectorSize: number;
@@ -142,6 +143,7 @@ function placeRandomOnEmptyCells(cells: number[], count: number, value: number, 
  * Converts a 1-based row/column pair to a 1-based linear index for any square grid.
  *
  * @throws {RangeError} When row or column is not an integer in 1..gridSize.
+ * Source: apple_trek.bas lines 480-495 and 110-135.
  */
 export function coordToIndex1Based(row: number, col: number, gridSize: number): number {
   assertGridRange(row, gridSize, "row");
@@ -154,6 +156,7 @@ export function coordToIndex1Based(row: number, col: number, gridSize: number): 
  * Converts a 1-based linear index to a 1-based row/column pair for any square grid.
  *
  * @throws {RangeError} When index is not an integer in 1..gridSize^2.
+ * Source: apple_trek.bas lines 480-495.
  */
 export function indexToCoord1Based(index: number, gridSize: number): GridCoord1Based {
   assertGridRange(index, gridSize * gridSize, "index");
@@ -191,6 +194,7 @@ export function indexToDefaultQuadrantCoord1Based(index: number): GridCoord1Base
  * encoding scheme: hundreds are Klingons, tens are starbases, and ones are
  * stars. The selected starting quadrant is marked explored by storing a
  * positive encoded value.
+ * Source: apple_trek.bas lines 150-230 and 9055-9065.
  */
 export function createInitialGameState(seed: number): GameState {
   const rng = new SeededRng(seed);

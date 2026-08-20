@@ -79,6 +79,7 @@ function reasonSummary(reason: Exclude<EndgameReason, "ongoing">): string {
  * Success is granted only when all Klingons are eliminated. Explicit
  * self-destruct has priority over other failure reasons, followed by victory,
  * ship destruction, and deadline expiry.
+ * Source: apple_trek.bas lines 9400-9600 and mission loop guard at lines 9310-9320.
  */
 export function evaluateMissionOutcome(state: GameState): MissionOutcomeBulletin | null {
   const reason = resolveReason(state);
@@ -100,6 +101,7 @@ export function evaluateMissionOutcome(state: GameState): MissionOutcomeBulletin
 }
 
 /** Updates `endgame` when the current state satisfies any terminal mission condition. */
+// Source: apple_trek.bas lines 9310-9320 and 9400-9470.
 export function latchMissionOutcome(state: GameState): GameState {
   const bulletin = evaluateMissionOutcome(state);
   if (!bulletin) {
@@ -116,6 +118,7 @@ export function latchMissionOutcome(state: GameState): GameState {
 }
 
 /** Marks the state as self-destructed and drains all defensive ship resources. */
+// Source: apple_trek.bas lines 7000-7010 and 9400-9470.
 export function triggerSelfDestruct(state: GameState): GameState {
   return {
     ...state,

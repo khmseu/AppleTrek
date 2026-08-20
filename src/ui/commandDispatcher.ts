@@ -274,6 +274,7 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
 }
 
 /** Creates a new command session with an optional starting state and welcome log. */
+// Source: apple_trek.bas initialization and welcome flow at lines 9005-9200.
 export function createCommandSession(initialState?: GameState): CommandSession {
   return {
     state: initialState ?? createInitialGameState(1701),
@@ -282,6 +283,7 @@ export function createCommandSession(initialState?: GameState): CommandSession {
 }
 
 /** Executes an already parsed command and appends its canonical form to the log. */
+// Source: apple_trek.bas command dispatch at lines 9220-9310.
 export function dispatchParsed(session: CommandSession, command: ParsedCommand, rng: SeededRng): CommandSession {
   const execution = executeParsed(session.state, command, rng);
   const nextLog = [...appendLog(session.log, `> ${formatParsedCommand(command)}`), ...execution.logLines];
@@ -292,6 +294,7 @@ export function dispatchParsed(session: CommandSession, command: ParsedCommand, 
 }
 
 /** Parses and executes a prompt command through the shared command path. */
+// Source: apple_trek.bas lines 9220-9310.
 export function dispatchPrompt(session: CommandSession, prompt: string, rng: SeededRng): CommandSession {
   const parsed = parsePrompt(prompt);
   return dispatchParsed(session, parsed, rng);

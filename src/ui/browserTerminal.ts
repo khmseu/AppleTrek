@@ -32,6 +32,7 @@ function numberFromInput(input: HTMLInputElement): number {
  * The terminal owns a deterministic command session and shared RNG, renders the
  * status/sector/log panels, and routes both prompt submissions and quick-control
  * buttons through the same dispatcher path used by tests and scripted replays.
+ * Source: apple_trek.bas screen setup at lines 600-690 and 9051-9052; command loop at lines 9220-9310.
  *
  * @throws {Error} When expected DOM nodes cannot be found after template setup.
  */
@@ -217,6 +218,14 @@ export function mountBrowserTerminal(app: HTMLElement): void {
     throw new Error("Terminal UI failed to initialize");
   }
 
+  /**
+   * Renders the current session state into the three terminal panels.
+   *
+   * The status panel shows stardate, energy, shields, torpedoes, Klingons, bases,
+   * and current quadrant/sector. The sector panel shows the current sector grid.
+  * The log panel shows the command history and any errors.
+  * Source: apple_trek.bas lines 1000-1080 and command output flow at 9220-9275.
+   */
   const render = (): void => {
     statusPanel.textContent = renderStatusPanel(session.state);
     sectorPanel.textContent = renderSectorPanel(session.state);

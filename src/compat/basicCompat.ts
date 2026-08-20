@@ -46,6 +46,7 @@ function toIntegerBasicWord(value: unknown, label: string): number {
 }
 
 /** Converts a JavaScript truthy/falsy value into Apple Integer BASIC boolean representation. */
+// Source: apple_trek.bas relational expressions at lines 310, 1047, 1180, and 1850.
 export function boolToBasic(value: unknown): number {
   return value ? 1 : 0;
 }
@@ -61,6 +62,7 @@ export function basicNot(value: unknown): number {
 }
 
 /** Implements Apple Integer BASIC `AND` as signed 16-bit bitwise conjunction. */
+// Source: apple_trek.bas line 110 and compound conditions at lines 160-170 and 1180.
 export function basicAnd(a: unknown, b: unknown): number {
   return toIntegerBasicWord(
     toIntegerBasicWord(a, "left operand") & toIntegerBasicWord(b, "right operand"),
@@ -69,6 +71,7 @@ export function basicAnd(a: unknown, b: unknown): number {
 }
 
 /** Implements Apple Integer BASIC `OR` as signed 16-bit bitwise disjunction. */
+// Source: apple_trek.bas compound conditions at lines 160-170, 1180, and 1845.
 export function basicOr(a: unknown, b: unknown): number {
   return toIntegerBasicWord(
     toIntegerBasicWord(a, "left operand") | toIntegerBasicWord(b, "right operand"),
@@ -77,6 +80,7 @@ export function basicOr(a: unknown, b: unknown): number {
 }
 
 /** Apple II zero-page and soft-switch addresses touched by the original BASIC source. */
+// Source: apple_trek.bas lines 600-7040, especially 600-690 and 2500-2510.
 export const APPLE_II_MEMORY = Object.freeze({
   WNDLFT: 0x20,
   WNDWDTH: 0x21,
@@ -97,6 +101,7 @@ export const APPLE_II_MEMORY = Object.freeze({
 } as const);
 
 /** Apple II ROM routines called by the original BASIC source. */
+// Source: apple_trek.bas lines 600, 610, 620, 660, 690, 1000-1145, and 7030-7040.
 export const APPLE_II_ROM_CALLS = Object.freeze({
   SET_INVERSE_TEXT: 0xfe80,
   SET_NORMAL_TEXT: 0xfe84,
@@ -168,6 +173,7 @@ export function callNoop(address: number): void {
  *
  * All gameplay randomness should flow through this class rather than
  * `Math.random()` so tests and scripted replays can reproduce exact outcomes.
+ * Source: apple_trek.bas RND calls at lines 160-190, 815, 900, and 9055.
  */
 export class SeededRng {
   private state: number;

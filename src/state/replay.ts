@@ -35,6 +35,7 @@ function computeChecksumFnv1a(input: string): string {
  *
  * The replay uses the same dispatcher as the browser UI so prompt parsing,
  * command side effects, enemy turns, and logging are all covered by the snapshot.
+ * Source: apple_trek.bas initialization at lines 9005-9200 and command loop at lines 9220-9320.
  */
 export function runScriptedReplay(seed: number, commands: string[]): ReplayResult {
   const rng = new SeededRng(seed);

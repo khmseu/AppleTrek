@@ -96,6 +96,7 @@ function normalizeSignedZero(value: number): number {
  * Courses are normalized into 0..359, including negative inputs. The resulting
  * vector intentionally preserves the Apple Integer BASIC approximation rather
  * than using trigonometric unit vectors, including integer-only component math.
+ * Source: apple_trek.bas lines 300-375.
  */
 export function courseToVector(course: number): CourseVector {
   const normalized = normalizeCourse(course);
@@ -132,6 +133,7 @@ export function courseToVector(course: number): CourseVector {
  * sector when movement crosses into a different quadrant.
  *
  * @throws {RangeError} When `steps` is invalid or the galaxy shape is inconsistent.
+ * Source: apple_trek.bas lines 5200-5380, especially 5267-5350.
  */
 export function stepMovement(state: GameState, vector: CourseVector, steps: number): GameState {
   if (!Number.isInteger(steps) || steps < 0) {
@@ -224,6 +226,7 @@ export function stepMovement(state: GameState, vector: CourseVector, steps: numb
  * is clamped to the current available ship energy.
  *
  * @throws {RangeError} When `ticks` is negative or not an integer.
+ * Source: apple_trek.bas lines 800-910 and 817-890.
  */
 export function advanceTime(state: GameState, ticks: number): GameState {
   if (!Number.isInteger(ticks) || ticks < 0) {
@@ -269,6 +272,7 @@ export function advanceTime(state: GameState, ticks: number): GameState {
  * Sets the target shield percentage and immediately recalculates shield energy.
  *
  * @throws {RangeError} When `targetPercent` is outside the inclusive range 0..100.
+ * Source: apple_trek.bas line 5400 and status display at lines 1047-1050.
  */
 export function setShieldsPercent(state: GameState, targetPercent: number): GameState {
   if (!Number.isInteger(targetPercent) || targetPercent < 0 || targetPercent > 100) {
@@ -298,6 +302,7 @@ export function setShieldsPercent(state: GameState, targetPercent: number): Game
  * cubic energy and advances a fixed ten ticks.
  *
  * @throws {RangeError} When inputs are invalid or energy is insufficient.
+ * Source: apple_trek.bas lines 5200-5380.
  */
 export function navigate(state: GameState, input: NavigateInput): GameState {
   if (!Number.isFinite(input.course)) {

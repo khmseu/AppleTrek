@@ -11,6 +11,7 @@ function formatTickClock(stardate: number, ticks: number): string {
 }
 
 /** Renders the compact status panel shown beside the sector grid. */
+// Source: apple_trek.bas status display at lines 1030-1080.
 export function renderStatusPanel(state: GameState): string {
   APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
   APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT);
@@ -38,6 +39,7 @@ export function renderStatusPanel(state: GameState): string {
  * it, preventing misleading output for malformed variable-size states.
  *
  * @throws {RangeError} When sector length does not match `sectorSize^2`.
+ * Source: apple_trek.bas sector display at lines 1000-1025 and cell rendering at 1120-1145.
  */
 export function renderSectorPanel(state: GameState): string {
   APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
@@ -67,6 +69,7 @@ export function renderSectorPanel(state: GameState): string {
 }
 
 /** Renders the command log header plus the last ten log lines. */
+// Source: apple_trek.bas prompt/output flow at lines 9220-9275.
 export function renderOutputLog(log: string[]): string {
   return ["LOG", ...log.slice(-10)].join("\n");
 }

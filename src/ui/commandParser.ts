@@ -63,6 +63,7 @@ function expectArity(parts: string[], arity: number, command: string): void {
  * the state transition functions that execute the command.
  *
  * @throws {RangeError} For empty input, unknown commands, arity mismatch, or non-integer arguments.
+ * Source: apple_trek.bas command menu at lines 9220-9275 and dispatch at line 9310.
  */
 export function parsePrompt(input: string): ParsedCommand {
   const parts = input

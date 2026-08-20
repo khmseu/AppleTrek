@@ -93,6 +93,7 @@ function distanceBetween(a: number, b: number, gridSize: number): number {
  * counts are decremented, and the current quadrant encoding is updated.
  *
  * @throws {RangeError} When energy is invalid or exceeds current ship energy.
+ * Source: apple_trek.bas lines 5800-5895.
  */
 export function firePhasers(state: GameState, energyToSpend: number, rng: SeededRng): PhaserResult {
   if (!Number.isInteger(energyToSpend) || energyToSpend <= 0) {
@@ -149,6 +150,7 @@ export function firePhasers(state: GameState, energyToSpend: number, rng: Seeded
  * when the projectile leaves the current sector bounds.
  *
  * @throws {RangeError} When no torpedoes remain.
+ * Source: apple_trek.bas lines 6000-6130 and 2400-2470.
  */
 export function fireTorpedo(state: GameState, course: number): TorpedoResult {
   if (state.ship.torpedoes <= 0) {
@@ -232,6 +234,7 @@ export function fireTorpedo(state: GameState, course: number): TorpedoResult {
  *
  * Each Klingon may move to an adjacent empty cell and then fires at the ship.
  * Shield damage is applied first; overflow drains ship energy.
+ * Source: apple_trek.bas lines 500-580 and 815-817.
  */
 export function enemyTurn(state: GameState, rng: SeededRng): GameState {
   const sector = [...state.sector];
