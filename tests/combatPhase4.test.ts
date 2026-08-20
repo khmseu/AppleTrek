@@ -7,6 +7,24 @@ import {
   makeTwoKlingonCombatFixture
 } from "./helpers/fixtures";
 
+class ScriptedRng extends SeededRng {
+  private readonly values: number[];
+
+  constructor(values: number[]) {
+    super(0);
+    this.values = [...values];
+  }
+
+  override nextInt(): number {
+    const value = this.values.shift();
+    if (value === undefined) {
+      throw new Error("ScriptedRng exhausted");
+    }
+
+    return value;
+  }
+}
+
 describe("Phase 4 combat core", () => {
   it("phasers damage klingons and destroy weakened targets", () => {
     const fixture = makeTwoKlingonCombatFixture();
@@ -129,6 +147,20 @@ describe("Phase 4 combat core", () => {
     expect(a).toEqual(b);
     expect(a.ship.shieldEnergy).toBeLessThan(state.ship.shieldEnergy);
     expect(a.ship.energy).toBeLessThanOrEqual(state.ship.energy);
+  });
+
+  it("enemy fire applies one attack for each visible Klingon", () => {
+    const state = makeTwoKlingonCombatFixture().state;
+    const rng = new ScriptedRng([
+      99,
+      400,
+      99,
+      200
+    ]);
+
+    const next = enemyTurn(state, rng);
+
+    expect(next.ship.shieldEnergy).toBe(2200);
   });
 
   it("enemy turn movement keeps sector valid and preserves entity counts", () => {

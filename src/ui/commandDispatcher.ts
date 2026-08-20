@@ -1,7 +1,8 @@
 import { SeededRng } from "../compat/basicCompat";
+import { isKlingonCell } from "../state/cells";
 import { enemyTurn, firePhasers, fireTorpedo } from "../state/combat";
-import { triggerSelfDestruct } from "../state/endgame";
-import { createInitialGameState, type GameState } from "../state/gameState";
+import { latchMissionOutcome, triggerSelfDestruct } from "../state/endgame";
+import { createInitialGameState, indexToCoord1Based, type GameState } from "../state/gameState";
 import { navigate, setShieldsPercent } from "../state/navigation";
 import { assertNever } from "../utils/assertNever";
 import { formatParsedCommand, parsePrompt, type ParsedCommand } from "./commandParser";
@@ -57,6 +58,77 @@ function appendLog(log: string[], line: string): string[] {
   return [...log, line];
 }
 
+interface CommandExecution {
+  state: GameState;
+  logLines: string[];
+}
+
+const DAMAGE_LABELS = [
+  "WARP DRIVES",
+  "SR SENSORS",
+  "LR SENSORS",
+  "PHASERS",
+  "PH TORPS",
+  "GAL RECORD",
+  "COMPUTER",
+  "PROBE",
+  "CRYSTALS"
+] as const;
+
+function formatDamageDuration(value: number): string {
+  const whole = Math.trunc(value / 100);
+  const fractional = Math.abs(value % 100).toString().padStart(2, "0");
+  return `${whole}.${fractional}`;
+}
+
+function damageReportLines(state: GameState): string[] {
+  const damaged = state.damage
+    .map((value, index) => ({ value, label: DAMAGE_LABELS[index] ?? `DEVICE ${index + 1}` }))
+    .filter((device) => device.value > 0)
+    .map((device) => `${device.label} DAMAGED ${formatDamageDuration(device.value)}`);
+
+  return ["DAMAGE REPORT", ...(damaged.length > 0 ? damaged : ["ALL SYSTEMS OK"] )];
+}
+
+function computerReportLines(state: GameState): string[] {
+  return [
+    "COMPUTER REPORT",
+    `QUADRANT ${state.position.quadrant.row}-${state.position.quadrant.col}`,
+    `SECTOR ${state.position.sector.row}-${state.position.sector.col}`,
+    `KLINGONS ${state.counts.klingonsRemaining}/${state.counts.initialKlingons}`,
+    `BASES ${state.counts.basesRemaining}/${state.counts.initialBases}`
+  ];
+}
+
+function probeReportLines(state: GameState): string[] {
+  const klingons = state.sector
+    .map((cell, index) => ({ cell, index: index + 1 }))
+    .filter(({ cell }) => isKlingonCell(cell))
+    .map(({ cell, index }) => {
+      const coord = indexToCoord1Based(index, state.sectorSize);
+      return `KLINGON ${coord.row}-${coord.col} ENERGY ${-cell}`;
+    });
+
+  return ["PROBE REPORT", ...(klingons.length > 0 ? klingons : ["NO KLINGONS"] )];
+}
+
+function loadTorpedoes(state: GameState, amount: number): GameState {
+  const nextTorpedoes = state.ship.torpedoes + amount;
+  if (nextTorpedoes < 0 || nextTorpedoes > state.ship.torpedoesMax) {
+    throw new RangeError(`Invalid torpedo load: ${amount}`);
+  }
+
+  const energyCost = (500 + 100 * Math.sign(amount)) * amount;
+  return {
+    ...state,
+    ship: {
+      ...state.ship,
+      energy: state.ship.energy - energyCost,
+      torpedoes: nextTorpedoes
+    }
+  };
+}
+
 function controlToParsed(input: ControlCommandInput): ParsedCommand {
   switch (input.action) {
     case "ion":
@@ -95,34 +167,87 @@ function controlToParsed(input: ControlCommandInput): ParsedCommand {
   }
 }
 
-function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng): GameState {
+function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng): CommandExecution {
   if (state.endgame.terminal) {
     throw new RangeError("Mission already ended");
   }
 
   if (command.kind === "ion") {
-    return navigate(state, { mode: "ion", course: command.course, value: command.value });
+    return {
+      state: latchMissionOutcome(enemyTurn(
+        navigate(state, { mode: "ion", course: command.course, value: command.value }),
+        rng
+      )),
+      logLines: []
+    };
   }
 
   if (command.kind === "warp") {
-    return navigate(state, { mode: "warp", course: command.course, value: command.value });
+    return {
+      state: latchMissionOutcome(enemyTurn(
+        navigate(state, { mode: "warp", course: command.course, value: command.value }),
+        rng
+      )),
+      logLines: []
+    };
   }
 
   if (command.kind === "shields") {
-    return setShieldsPercent(state, command.value);
+    return {
+      state: latchMissionOutcome(setShieldsPercent(state, command.value)),
+      logLines: []
+    };
   }
 
   if (command.kind === "phasers") {
     const result = firePhasers(state, command.value, rng);
-    return enemyTurn(result.state, rng);
+    return {
+      state: latchMissionOutcome(enemyTurn(result.state, rng)),
+      logLines: []
+    };
+  }
+
+  if (command.kind === "damage-report") {
+    return {
+      state,
+      logLines: damageReportLines(state)
+    };
+  }
+
+  if (command.kind === "load-torpedoes") {
+    const loaded = latchMissionOutcome(loadTorpedoes(state, command.value));
+    return {
+      state: loaded,
+      logLines: [`TORPEDOES ${loaded.ship.torpedoes}/${loaded.ship.torpedoesMax}`]
+    };
+  }
+
+  if (command.kind === "computer") {
+    return {
+      state,
+      logLines: computerReportLines(state)
+    };
+  }
+
+  if (command.kind === "probe") {
+    return {
+      state,
+      logLines: probeReportLines(state)
+    };
   }
 
   if (command.kind === "self-destruct") {
-    return triggerSelfDestruct(state);
+    return {
+      state: triggerSelfDestruct(state),
+      logLines: []
+    };
   }
 
   const result = fireTorpedo(state, command.course);
-  return enemyTurn(result.state, rng);
+  return {
+    state: latchMissionOutcome(enemyTurn(result.state, rng)),
+    logLines: []
+  };
 }
 
 /** Creates a new command session with an optional starting state and welcome log. */
@@ -135,10 +260,10 @@ export function createCommandSession(initialState?: GameState): CommandSession {
 
 /** Executes an already parsed command and appends its canonical form to the log. */
 export function dispatchParsed(session: CommandSession, command: ParsedCommand, rng: SeededRng): CommandSession {
-  const nextState = executeParsed(session.state, command, rng);
-  const nextLog = appendLog(session.log, `> ${formatParsedCommand(command)}`);
+  const execution = executeParsed(session.state, command, rng);
+  const nextLog = [...appendLog(session.log, `> ${formatParsedCommand(command)}`), ...execution.logLines];
   return {
-    state: nextState,
+    state: execution.state,
     log: nextLog
   };
 }

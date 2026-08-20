@@ -245,6 +245,14 @@ describe("advanceTime", () => {
     expect(next.ship.energy).toBe(5000);
     expect(next.ship.shieldEnergy).toBe(2213);
   });
+
+  it("reduces positive damage counters as time advances", () => {
+    const state = makeTestState({ damage: [0, 1, 2, 5, 0, 0, 10, 0, 0] });
+
+    const next = advanceTime(state, 2);
+
+    expect(next.damage).toEqual([0, 0, 0, 3, 0, 0, 8, 0, 0]);
+  });
 });
 
 describe("phase 3 command handlers", () => {

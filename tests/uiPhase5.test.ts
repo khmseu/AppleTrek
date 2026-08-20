@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
-import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
+import { enemyTurn, firePhasers, fireTorpedo, latchMissionOutcome } from "../src/state";
 import { coordToIndex1Based, type GameState } from "../src/state/gameState";
 import { navigate } from "../src/state/navigation";
 import {
@@ -29,6 +29,10 @@ describe("Phase 5 prompt parsing", () => {
     expect(formatParsedCommand({ kind: "shields", value: 35 })).toBe("SHIELDS 35");
     expect(formatParsedCommand({ kind: "phasers", value: 1200 })).toBe("PHASERS 1200");
     expect(formatParsedCommand({ kind: "torpedo", course: 180 })).toBe("TORPEDO 180");
+    expect(formatParsedCommand({ kind: "damage-report" })).toBe("DAMAGE");
+    expect(formatParsedCommand({ kind: "load-torpedoes", value: 2 })).toBe("LOAD 2");
+    expect(formatParsedCommand({ kind: "computer" })).toBe("COMPUTER");
+    expect(formatParsedCommand({ kind: "probe" })).toBe("PROBE");
     expect(formatParsedCommand({ kind: "self-destruct" })).toBe("DESTRUCT");
   });
 
@@ -38,6 +42,7 @@ describe("Phase 5 prompt parsing", () => {
     expect(formatParsedCommand({ kind: "shields", value: 0 })).toBe("SHIELDS 0");
     expect(formatParsedCommand({ kind: "phasers", value: 0 })).toBe("PHASERS 0");
     expect(formatParsedCommand({ kind: "torpedo", course: 0 })).toBe("TORPEDO 0");
+    expect(formatParsedCommand({ kind: "load-torpedoes", value: 0 })).toBe("LOAD 0");
   });
 
   it("parses representative command forms", () => {
@@ -46,6 +51,10 @@ describe("Phase 5 prompt parsing", () => {
     expect(parsePrompt("SHIELDS 35")).toEqual({ kind: "shields", value: 35 });
     expect(parsePrompt("phasers 1200")).toEqual({ kind: "phasers", value: 1200 });
     expect(parsePrompt("TORP 180")).toEqual({ kind: "torpedo", course: 180 });
+    expect(parsePrompt("damage")).toEqual({ kind: "damage-report" });
+    expect(parsePrompt("load -1")).toEqual({ kind: "load-torpedoes", value: -1 });
+    expect(parsePrompt("computer")).toEqual({ kind: "computer" });
+    expect(parsePrompt("probe")).toEqual({ kind: "probe" });
   });
 
   it("rejects unknown commands", () => {
@@ -104,31 +113,27 @@ describe("Phase 5 dispatcher error paths", () => {
 
 describe("Phase 5 command routing", () => {
   it("routes ion navigation through navigation module behavior", () => {
-    const state = makeTestState({
-      ship: {
-        energy: 4000,
-        energyMax: 5000,
-        shieldEnergy: 2000,
-        shieldsPercent: 50,
-        torpedoes: 10,
-        torpedoesMax: 10
-      },
-      position: {
-        quadrantIndex: 28,
-        quadrant: { row: 4, col: 4 },
-        sectorIndex: 37,
-        sector: { row: 5, col: 5 }
-      },
-      clock: {
-        stardate: 3424,
-        ticks: 0
-      }
-    });
+    const state = makeSingleKlingonCombatFixture().state;
 
-    const expected = navigate(state, { mode: "ion", course: 90, value: 2 });
+    const expectedRng = new SeededRng(7);
+    const expectedAfterNavigation = navigate(state, { mode: "ion", course: 90, value: 1 });
+    const expected = enemyTurn(expectedAfterNavigation, expectedRng);
 
     const session = createCommandSession(state);
-    const routed = dispatchPrompt(session, "ION 90 2", new SeededRng(7));
+    const routed = dispatchPrompt(session, "ION 90 1", new SeededRng(7));
+
+    expect(routed.state).toEqual(expected);
+  });
+
+  it("routes warp navigation through post-command enemy action", () => {
+    const state = makeSingleKlingonCombatFixture().state;
+
+    const expectedRng = new SeededRng(8);
+    const expectedAfterNavigation = navigate(state, { mode: "warp", course: 90, value: 1 });
+    const expected = enemyTurn(expectedAfterNavigation, expectedRng);
+
+    const session = createCommandSession(state);
+    const routed = dispatchPrompt(session, "WARP 90 1", new SeededRng(8));
 
     expect(routed.state).toEqual(expected);
   });
@@ -138,7 +143,7 @@ describe("Phase 5 command routing", () => {
 
     const expectedRng = new SeededRng(11);
     const expectedAfterPhasers = firePhasers(state, 800, expectedRng).state;
-    const expected = enemyTurn(expectedAfterPhasers, expectedRng);
+    const expected = latchMissionOutcome(enemyTurn(expectedAfterPhasers, expectedRng));
 
     const session = createCommandSession(state);
     const routed = dispatchPrompt(session, "PHASERS 800", new SeededRng(11));
@@ -151,12 +156,64 @@ describe("Phase 5 command routing", () => {
 
     const expectedRng = new SeededRng(11);
     const expectedAfterTorpedo = fireTorpedo(state, 90).state;
-    const expected = enemyTurn(expectedAfterTorpedo, expectedRng);
+    const expected = latchMissionOutcome(enemyTurn(expectedAfterTorpedo, expectedRng));
 
     const session = createCommandSession(state);
     const routed = dispatchPrompt(session, "TORPEDO 90", new SeededRng(11));
 
     expect(routed.state).toEqual(expected);
+  });
+
+  it("routes damage report without mutating state", () => {
+    const state = makeTestState({ damage: [0, 100, 0, 250, 0, 0, 50, 0, 0] });
+    const session = createCommandSession(state);
+
+    const routed = dispatchPrompt(session, "DAMAGE", new SeededRng(1));
+
+    expect(routed.state).toEqual(state);
+    expect(routed.log).toContain("DAMAGE REPORT");
+    expect(routed.log).toContain("SR SENSORS DAMAGED 1.00");
+    expect(routed.log).toContain("PHASERS DAMAGED 2.50");
+  });
+
+  it("routes torpedo loading with Integer BASIC energy accounting", () => {
+    const state = makeTestState({
+      ship: {
+        energy: 5000,
+        energyMax: 5000,
+        shieldEnergy: 2500,
+        shieldsPercent: 50,
+        torpedoes: 8,
+        torpedoesMax: 10
+      }
+    });
+    const session = createCommandSession(state);
+
+    const loaded = dispatchPrompt(session, "LOAD 2", new SeededRng(1));
+
+    expect(loaded.state.ship.torpedoes).toBe(10);
+    expect(loaded.state.ship.energy).toBe(3800);
+    expect(loaded.log).toContain("TORPEDOES 10/10");
+  });
+
+  it("rejects torpedo loading outside magazine bounds", () => {
+    const session = createCommandSession(makeTestState());
+
+    expect(() => dispatchPrompt(session, "LOAD 1", new SeededRng(1))).toThrow(/Invalid torpedo load/);
+  });
+
+  it("routes computer and probe reports without enemy action", () => {
+    const state = makeSingleKlingonCombatFixture().state;
+    const session = createCommandSession(state);
+
+    const computer = dispatchPrompt(session, "COMPUTER", new SeededRng(1));
+    const probe = dispatchPrompt(session, "PROBE", new SeededRng(1));
+
+    expect(computer.state).toEqual(state);
+    expect(computer.log).toContain("COMPUTER REPORT");
+    expect(probe.state).toEqual(state);
+    expect(probe.log).toContain("PROBE REPORT");
+    expect(probe.log.some((line) => line.includes("KLINGON"))).toBe(true);
   });
 });
 

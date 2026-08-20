@@ -7,6 +7,10 @@ export type ParsedCommand =
   | { kind: "shields"; value: number }
   | { kind: "phasers"; value: number }
   | { kind: "torpedo"; course: number }
+  | { kind: "damage-report" }
+  | { kind: "load-torpedoes"; value: number }
+  | { kind: "computer" }
+  | { kind: "probe" }
   | { kind: "self-destruct" };
 
 /** Formats a parsed command into the canonical uppercase log/prompt form. */
@@ -22,6 +26,14 @@ export function formatParsedCommand(command: ParsedCommand): string {
       return `PHASERS ${command.value}`;
     case "torpedo":
       return `TORPEDO ${command.course}`;
+    case "damage-report":
+      return "DAMAGE";
+    case "load-torpedoes":
+      return `LOAD ${command.value}`;
+    case "computer":
+      return "COMPUTER";
+    case "probe":
+      return "PROBE";
     case "self-destruct":
       return "DESTRUCT";
     default:
@@ -103,6 +115,35 @@ export function parsePrompt(input: string): ParsedCommand {
     return {
       kind: "torpedo",
       course: parseInteger(parts[1], "course")
+    };
+  }
+
+  if (command === "DAMAGE" || command === "DAM" || command === "REPORT" || command === "DR") {
+    expectArity(parts, 1, "DAMAGE");
+    return {
+      kind: "damage-report"
+    };
+  }
+
+  if (command === "LOAD" || command === "LOADTORP" || command === "LT") {
+    expectArity(parts, 2, "LOAD");
+    return {
+      kind: "load-torpedoes",
+      value: parseInteger(parts[1], "value")
+    };
+  }
+
+  if (command === "COMPUTER" || command === "COMP" || command === "C") {
+    expectArity(parts, 1, "COMPUTER");
+    return {
+      kind: "computer"
+    };
+  }
+
+  if (command === "PROBE" || command === "PR") {
+    expectArity(parts, 1, "PROBE");
+    return {
+      kind: "probe"
     };
   }
 

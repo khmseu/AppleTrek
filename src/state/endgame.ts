@@ -99,6 +99,22 @@ export function evaluateMissionOutcome(state: GameState): MissionOutcomeBulletin
   };
 }
 
+/** Updates `endgame` when the current state satisfies any terminal mission condition. */
+export function latchMissionOutcome(state: GameState): GameState {
+  const bulletin = evaluateMissionOutcome(state);
+  if (!bulletin) {
+    return state;
+  }
+
+  return {
+    ...state,
+    endgame: {
+      terminal: true,
+      reason: bulletin.reason
+    }
+  };
+}
+
 /** Marks the state as self-destructed and drains all defensive ship resources. */
 export function triggerSelfDestruct(state: GameState): GameState {
   return {

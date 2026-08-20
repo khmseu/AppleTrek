@@ -188,6 +188,27 @@ describe("Phase 6 self-destruct path", () => {
     expect(() => dispatchPrompt(afterDestruct, "ION 90 1", new SeededRng(99))).toThrow("Mission already ended");
     expect(() => dispatchPrompt(afterDestruct, "DESTRUCT", new SeededRng(99))).toThrow("Mission already ended");
   });
+
+  it("latches terminal mission state after ordinary commands", () => {
+    const session = createCommandSession(
+      makeTestState({
+        counts: {
+          initialKlingons: 1,
+          klingonsRemaining: 0,
+          initialBases: 1,
+          basesRemaining: 1
+        }
+      })
+    );
+
+    const afterCommand = dispatchPrompt(session, "SHIELDS 50", new SeededRng(99));
+
+    expect(afterCommand.state.endgame.terminal).toBe(true);
+    expect(afterCommand.state.endgame.reason).toBe("klingons-eliminated");
+    expect(() => dispatchPrompt(afterCommand, "ION 90 1", new SeededRng(99))).toThrow(
+      "Mission already ended"
+    );
+  });
 });
 
 describe("Phase 6 deterministic replay harness", () => {

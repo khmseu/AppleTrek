@@ -246,6 +246,7 @@ export function advanceTime(state: GameState, ticks: number): GameState {
   const totalTicks = state.clock.ticks + ticks;
   const stardateDelta = truncDiv(totalTicks, 100);
   const nextTicks = modCompat(totalTicks, 100);
+  const damage = state.damage.map((value) => (value > 0 ? Math.max(0, value - ticks) : value));
 
   return {
     ...state,
@@ -257,7 +258,8 @@ export function advanceTime(state: GameState, ticks: number): GameState {
       ...state.ship,
       energy,
       shieldEnergy
-    }
+    },
+    damage
   };
 }
 
