@@ -1,0 +1,77 @@
+export type ParsedCommand =
+  | { kind: "ion"; course: number; value: number }
+  | { kind: "warp"; course: number; value: number }
+  | { kind: "shields"; value: number }
+  | { kind: "phasers"; value: number }
+  | { kind: "torpedo"; course: number };
+
+function parseInteger(input: string, label: string): number {
+  const value = Number(input);
+  if (!Number.isInteger(value)) {
+    throw new RangeError(`Invalid ${label}: ${input}`);
+  }
+  return value;
+}
+
+function expectArity(parts: string[], arity: number, command: string): void {
+  if (parts.length !== arity) {
+    throw new RangeError(`Expected ${arity - 1} arguments for ${command}`);
+  }
+}
+
+export function parsePrompt(input: string): ParsedCommand {
+  const parts = input
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part.length > 0);
+
+  if (parts.length === 0) {
+    throw new RangeError("Empty command");
+  }
+
+  const command = parts[0].toUpperCase();
+
+  if (command === "ION" || command === "I") {
+    expectArity(parts, 3, "ION");
+    return {
+      kind: "ion",
+      course: parseInteger(parts[1], "course"),
+      value: parseInteger(parts[2], "value")
+    };
+  }
+
+  if (command === "WARP" || command === "W") {
+    expectArity(parts, 3, "WARP");
+    return {
+      kind: "warp",
+      course: parseInteger(parts[1], "course"),
+      value: parseInteger(parts[2], "value")
+    };
+  }
+
+  if (command === "SHIELDS" || command === "SH") {
+    expectArity(parts, 2, "SHIELDS");
+    return {
+      kind: "shields",
+      value: parseInteger(parts[1], "value")
+    };
+  }
+
+  if (command === "PHASERS" || command === "PH") {
+    expectArity(parts, 2, "PHASERS");
+    return {
+      kind: "phasers",
+      value: parseInteger(parts[1], "value")
+    };
+  }
+
+  if (command === "TORPEDO" || command === "TORP" || command === "T") {
+    expectArity(parts, 2, "TORPEDO");
+    return {
+      kind: "torpedo",
+      course: parseInteger(parts[1], "course")
+    };
+  }
+
+  throw new RangeError(`Unknown command: ${parts[0]}`);
+}
