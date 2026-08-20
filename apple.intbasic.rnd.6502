@@ -1,0 +1,30 @@
+
+                   ; 
+                   ; Token $2f RND
+                   ;   uses tken $3f (
+                   ; 
+ef4e: 20 15 e7     RND             jsr     GET16BIT
+ef51: a5 4e                        lda     MON_RNDL
+ef53: 20 08 e7                     jsr     LE708
+ef56: a5 4f                        lda     MON_RNDH
+ef58: d0 04                        bne     LEF5E
+ef5a: c5 4e                        cmp     MON_RNDL
+ef5c: 69 00                        adc     #$00
+ef5e: 29 7f        LEF5E           and     #$7f
+ef60: 85 4f                        sta     MON_RNDH
+ef62: 95 a0                        sta     NOUNSTKC,x
+ef64: a0 11                        ldy     #$11
+ef66: a5 4f        LEF66           lda     MON_RNDH
+ef68: 0a                           asl     A
+ef69: 18                           clc
+ef6a: 69 40                        adc     #$40
+ef6c: 0a                           asl     A
+ef6d: 26 4e                        rol     MON_RNDL
+ef6f: 26 4f                        rol     MON_RNDH
+ef71: 88                           dey
+ef72: d0 f2                        bne     LEF66
+ef74: a5 ce                        lda     ACC
+ef76: 20 08 e7                     jsr     LE708
+ef79: a5 cf                        lda     ACC+1
+ef7b: 95 a0                        sta     NOUNSTKC,x
+ef7d: 4c 7a e2                     jmp     MOD

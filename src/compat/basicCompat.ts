@@ -169,24 +169,53 @@ export function callNoop(address: number): void {
 }
 
 /**
- * Deterministic linear-congruential random number generator for reproducible games.
+ * Deterministic Apple Integer BASIC random number generator.
  *
- * All gameplay randomness should flow through this class rather than
- * `Math.random()` so tests and scripted replays can reproduce exact outcomes.
- * Source: apple_trek.bas RND calls at lines 160-190, 815, 900, and 9055.
+ * The 6502 RND routine at `apple.intbasic.rnd.6502:$EF4E` updates a 16-bit
+ * state with 17 byte-level rotate/shift rounds, then reduces that state by
+ * the requested range. All gameplay randomness flows through this class so
+ * tests and scripted replays remain reproducible.
  */
 export class SeededRng {
   private state: number;
 
+  /**
+   * Creates a new seeded random number generator.
+   *
+   * @param seed The initial seed value.
+   */
   constructor(seed: number) {
-    this.state = seed >>> 0;
+    this.state = Math.trunc(seed) & INTEGER_BASIC_WORD_MASK;
   }
 
-  /** Returns the next pseudo-random value in the half-open range [0, 1). */
-  nextFloat(): number {
-    // LCG constants chosen for simple, repeatable gameplay-style randomness.
-    this.state = (Math.imul(1664525, this.state) + 1013904223) >>> 0;
-    return this.state / 0x100000000;
+  /**
+   * Generates the next 16-bit pseudo-random value.
+   *
+   * @returns The next pseudo-random 16-bit integer.
+   */
+  private nextWord(): number {
+    let low = this.state & 0xff;
+    let high = (this.state >>> 8) & 0xff;
+
+    // The ROM routine turns an all-zero state into 1 before masking to 7 bits.
+    if (high === 0) {
+      high = low === 0 ? 1 : 0;
+    }
+    high &= 0x7f;
+
+    for (let round = 0; round < 0x11; round += 1) {
+      const shiftedHigh = ((high << 1) + 0x40) & 0xff;
+      const carryIntoLow = shiftedHigh >>> 7;
+      const nextLow = ((low << 1) & 0xff) | carryIntoLow;
+      const carryIntoHigh = low >>> 7;
+      const nextHigh = ((high << 1) & 0xff) | carryIntoHigh;
+
+      low = nextLow;
+      high = nextHigh;
+    }
+
+    this.state = (high << 8) | low;
+    return this.state;
   }
 
   /**
@@ -200,6 +229,6 @@ export class SeededRng {
     }
 
     const span = maxInclusive - minInclusive + 1;
-    return minInclusive + Math.floor(this.nextFloat() * span);
+    return minInclusive + (this.nextWord() % span);
   }
 }
