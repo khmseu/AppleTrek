@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
-import { evaluateMissionOutcome } from "../src/state/endgame";
+import { evaluateMissionOutcome, runScriptedReplay } from "../src/state";
 import { createInitialGameState, type GameState } from "../src/state/gameState";
-import { runScriptedReplay } from "../src/state/replay";
-import { createCommandSession, dispatchPrompt } from "../src/ui/commandDispatcher";
-import { createOverlayViewModel } from "../src/ui/viewModel";
+import { createCommandSession, createOverlayViewModel, dispatchPrompt } from "../src/ui";
 
 function makeState(overrides?: Partial<GameState>): GameState {
   const base = createInitialGameState(1701);

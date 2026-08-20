@@ -6,7 +6,7 @@ import {
   createInitialGameState,
   type GameState
 } from "../src/state/gameState";
-import { enemyTurn, firePhasers, fireTorpedo } from "../src/state/combat";
+import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
 
 function makeState(overrides?: Partial<GameState>): GameState {
   const base = createInitialGameState(1701);

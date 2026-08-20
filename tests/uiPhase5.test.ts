@@ -2,17 +2,19 @@
 
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
-import { enemyTurn, firePhasers, fireTorpedo } from "../src/state/combat";
+import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
 import { createInitialGameState, coordToIndex1Based, type GameState } from "../src/state/gameState";
 import { navigate } from "../src/state/navigation";
-import { mountBrowserTerminal } from "../src/ui/browserTerminal";
 import {
+  mountBrowserTerminal,
   createCommandSession,
   dispatchControl,
-  dispatchPrompt
-} from "../src/ui/commandDispatcher";
-import { parsePrompt } from "../src/ui/commandParser";
-import { renderOutputLog, renderSectorPanel, renderStatusPanel } from "../src/ui/terminalRenderer";
+  dispatchPrompt,
+  parsePrompt,
+  renderOutputLog,
+  renderSectorPanel,
+  renderStatusPanel
+} from "../src/ui";
 
 function makeState(overrides?: Partial<GameState>): GameState {
   const base = createInitialGameState(1701);
