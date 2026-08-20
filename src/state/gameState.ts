@@ -7,10 +7,10 @@ import {
   STAR_CELL
 } from "./cells";
 
-export const GRID_SIZE = 8;
-export const GRID_CELLS = GRID_SIZE * GRID_SIZE;
-// Galaxy has one encoded record per quadrant in the same 8x8 topology.
-export const GALAXY_CELLS = GRID_SIZE * GRID_SIZE;
+export const SECTOR_GRID_SIZE = 8;
+export const TOTAL_SECTOR_GRID_CELLS = SECTOR_GRID_SIZE * SECTOR_GRID_SIZE;
+export const QUADRANT_GRID_SIZE = 8;
+export const TOTAL_QUADRANT_GRID_CELLS = QUADRANT_GRID_SIZE * QUADRANT_GRID_SIZE;
 
 const START_STARDATE = 3424;
 const END_STARDATE = 3427;
@@ -69,7 +69,8 @@ export interface EndgameState {
 }
 
 export interface GameState {
-  gridSize: number;
+  sectorSize: number;
+  quadrantSize: number;
   mission: MissionState;
   clock: ClockState;
   ship: ShipState;
@@ -112,14 +113,14 @@ function placeRandomOnEmptyCells(cells: number[], count: number, value: number, 
   }
 }
 
-export function coordToIndex1Based(row: number, col: number, gridSize = GRID_SIZE): number {
+export function coordToIndex1Based(row: number, col: number, gridSize: number): number {
   assertGridRange(row, gridSize, "row");
   assertGridRange(col, gridSize, "col");
 
   return (row - 1) * gridSize + col;
 }
 
-export function indexToCoord1Based(index: number, gridSize = GRID_SIZE): GridCoord1Based {
+export function indexToCoord1Based(index: number, gridSize: number): GridCoord1Based {
   assertGridRange(index, gridSize * gridSize, "index");
 
   const zeroBased = index - 1;
@@ -128,13 +129,29 @@ export function indexToCoord1Based(index: number, gridSize = GRID_SIZE): GridCoo
   return { row, col };
 }
 
+export function coordToDefaultSectorIndex1Based(row: number, col: number): number {
+  return coordToIndex1Based(row, col, SECTOR_GRID_SIZE);
+}
+
+export function coordToDefaultQuadrantIndex1Based(row: number, col: number): number {
+  return coordToIndex1Based(row, col, QUADRANT_GRID_SIZE);
+}
+
+export function indexToDefaultSectorCoord1Based(index: number): GridCoord1Based {
+  return indexToCoord1Based(index, SECTOR_GRID_SIZE);
+}
+
+export function indexToDefaultQuadrantCoord1Based(index: number): GridCoord1Based {
+  return indexToCoord1Based(index, QUADRANT_GRID_SIZE);
+}
+
 export function createInitialGameState(seed: number): GameState {
   const rng = new SeededRng(seed);
 
   const initialBases = 2 + rndBelow(rng, 2) + rndBelow(rng, 2);
   const initialKlingons = 25 + rndBelow(rng, 15) + rndBelow(rng, 15);
 
-  const quadrantContents = Array.from({ length: GRID_CELLS }, () => 0);
+  const quadrantContents = Array.from({ length: TOTAL_QUADRANT_GRID_CELLS }, () => 0);
 
   // Starbases are first distributed to unique quadrants as +10 in the encoded record.
   placeRandomOnEmptyCells(quadrantContents, initialBases, 10, rng);
@@ -143,7 +160,7 @@ export function createInitialGameState(seed: number): GameState {
   for (let i = 1; i <= initialKlingons; i += 1) {
     if (!(i > 1 && rndBelow(rng, 900) > quadrantContents[selectedQuadrant - 1])) {
       do {
-        selectedQuadrant = rndBelow(rng, GRID_CELLS) + 1;
+        selectedQuadrant = rndBelow(rng, TOTAL_QUADRANT_GRID_CELLS) + 1;
       } while (
         modCompat(quadrantContents[selectedQuadrant - 1], 100) > 9 ||
         quadrantContents[selectedQuadrant - 1] > 800
@@ -158,8 +175,8 @@ export function createInitialGameState(seed: number): GameState {
     return -encoded - stars;
   });
 
-  const quadrantIndex = rndBelow(rng, GRID_CELLS) + 1;
-  const sectorIndex = rndBelow(rng, GRID_CELLS) + 1;
+  const quadrantIndex = rndBelow(rng, TOTAL_QUADRANT_GRID_CELLS) + 1;
+  const sectorIndex = rndBelow(rng, TOTAL_SECTOR_GRID_CELLS) + 1;
   galaxy[quadrantIndex - 1] = Math.abs(galaxy[quadrantIndex - 1]);
 
   const currentQuadrantEncoded = galaxy[quadrantIndex - 1];
@@ -167,14 +184,15 @@ export function createInitialGameState(seed: number): GameState {
   const klingons = truncDiv(currentQuadrantEncoded, 100);
   const bases = truncDiv(currentQuadrantEncoded, 10) - klingons * 10;
 
-  const sector = Array.from({ length: GRID_CELLS }, () => EMPTY_CELL);
+  const sector = Array.from({ length: TOTAL_SECTOR_GRID_CELLS }, () => EMPTY_CELL);
   sector[sectorIndex - 1] = SHIP_CELL;
   placeRandomOnEmptyCells(sector, bases, STARBASE_CELL, rng);
   placeRandomOnEmptyCells(sector, stars, STAR_CELL, rng);
   placeRandomOnEmptyCells(sector, klingons, KLINGON_UNIT_STRENGTH, rng);
 
   return {
-    gridSize: GRID_SIZE,
+    sectorSize: SECTOR_GRID_SIZE,
+    quadrantSize: QUADRANT_GRID_SIZE,
     mission: {
       startStardate: START_STARDATE,
       endStardate: END_STARDATE
@@ -201,9 +219,9 @@ export function createInitialGameState(seed: number): GameState {
     sector,
     position: {
       quadrantIndex,
-      quadrant: indexToCoord1Based(quadrantIndex),
+      quadrant: indexToDefaultQuadrantCoord1Based(quadrantIndex),
       sectorIndex,
-      sector: indexToCoord1Based(sectorIndex)
+      sector: indexToDefaultSectorCoord1Based(sectorIndex)
     },
     damage: Array.from({ length: 9 }, () => 0),
     endgame: {

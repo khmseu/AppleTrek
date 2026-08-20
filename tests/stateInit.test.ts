@@ -1,39 +1,56 @@
 import { describe, expect, it } from "vitest";
 import {
+  QUADRANT_GRID_SIZE,
+  SECTOR_GRID_SIZE,
   createInitialGameState,
+  coordToDefaultQuadrantIndex1Based,
+  coordToDefaultSectorIndex1Based,
   coordToIndex1Based,
-  indexToCoord1Based
+  indexToDefaultQuadrantCoord1Based,
+  indexToDefaultSectorCoord1Based,
+  indexToCoord1Based,
 } from "../src/state/gameState";
 
 describe("1-based 8x8 index helpers", () => {
   it("maps corners correctly", () => {
-    expect(coordToIndex1Based(1, 1)).toBe(1);
-    expect(coordToIndex1Based(1, 8)).toBe(8);
-    expect(coordToIndex1Based(8, 1)).toBe(57);
-    expect(coordToIndex1Based(8, 8)).toBe(64);
+    expect(coordToIndex1Based(1, 1, SECTOR_GRID_SIZE)).toBe(1);
+    expect(coordToIndex1Based(1, 8, SECTOR_GRID_SIZE)).toBe(8);
+    expect(coordToIndex1Based(8, 1, SECTOR_GRID_SIZE)).toBe(57);
+    expect(coordToIndex1Based(8, 8, SECTOR_GRID_SIZE)).toBe(64);
 
-    expect(indexToCoord1Based(1)).toEqual({ row: 1, col: 1 });
-    expect(indexToCoord1Based(8)).toEqual({ row: 1, col: 8 });
-    expect(indexToCoord1Based(57)).toEqual({ row: 8, col: 1 });
-    expect(indexToCoord1Based(64)).toEqual({ row: 8, col: 8 });
+    expect(indexToCoord1Based(1, SECTOR_GRID_SIZE)).toEqual({ row: 1, col: 1 });
+    expect(indexToCoord1Based(8, SECTOR_GRID_SIZE)).toEqual({ row: 1, col: 8 });
+    expect(indexToCoord1Based(57, SECTOR_GRID_SIZE)).toEqual({ row: 8, col: 1 });
+    expect(indexToCoord1Based(64, SECTOR_GRID_SIZE)).toEqual({ row: 8, col: 8 });
   });
 
   it("roundtrips all indices on an 8x8 grid", () => {
     for (let index = 1; index <= 64; index += 1) {
-      const coord = indexToCoord1Based(index);
-      expect(coordToIndex1Based(coord.row, coord.col)).toBe(index);
+      const coord = indexToCoord1Based(index, SECTOR_GRID_SIZE);
+      expect(coordToIndex1Based(coord.row, coord.col, SECTOR_GRID_SIZE)).toBe(index);
     }
   });
 
   it("throws RangeError for invalid 1-based inputs", () => {
-    expect(() => coordToIndex1Based(0, 1)).toThrow(RangeError);
-    expect(() => coordToIndex1Based(1, 0)).toThrow(RangeError);
-    expect(() => coordToIndex1Based(9, 1)).toThrow(RangeError);
-    expect(() => coordToIndex1Based(1, 9)).toThrow(RangeError);
-    expect(() => coordToIndex1Based(1.5, 1)).toThrow(RangeError);
-    expect(() => indexToCoord1Based(0)).toThrow(RangeError);
-    expect(() => indexToCoord1Based(65)).toThrow(RangeError);
-    expect(() => indexToCoord1Based(3.2)).toThrow(RangeError);
+    expect(() => coordToIndex1Based(0, 1, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => coordToIndex1Based(1, 0, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => coordToIndex1Based(9, 1, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => coordToIndex1Based(1, 9, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => coordToIndex1Based(1.5, 1, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => indexToCoord1Based(0, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => indexToCoord1Based(65, SECTOR_GRID_SIZE)).toThrow(RangeError);
+    expect(() => indexToCoord1Based(3.2, SECTOR_GRID_SIZE)).toThrow(RangeError);
+  });
+
+  it("exposes explicit default-size sector/quadrant index helpers", () => {
+    expect(coordToDefaultSectorIndex1Based(2, 3)).toBe(coordToIndex1Based(2, 3, SECTOR_GRID_SIZE));
+    expect(coordToDefaultQuadrantIndex1Based(7, 6)).toBe(
+      coordToIndex1Based(7, 6, QUADRANT_GRID_SIZE)
+    );
+    expect(indexToDefaultSectorCoord1Based(11)).toEqual(indexToCoord1Based(11, SECTOR_GRID_SIZE));
+    expect(indexToDefaultQuadrantCoord1Based(47)).toEqual(
+      indexToCoord1Based(47, QUADRANT_GRID_SIZE)
+    );
   });
 });
 

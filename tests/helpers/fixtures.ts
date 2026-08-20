@@ -1,7 +1,8 @@
 import {
-  GALAXY_CELLS,
-  GRID_CELLS,
-  coordToIndex1Based,
+  TOTAL_QUADRANT_GRID_CELLS,
+  TOTAL_SECTOR_GRID_CELLS,
+  coordToDefaultQuadrantIndex1Based,
+  coordToDefaultSectorIndex1Based,
   type GameState
 } from "../../src/state/gameState";
 import { makeTestState } from "./testState";
@@ -18,17 +19,17 @@ export interface TwoTargetCombatFixture extends CombatFixture {
 }
 
 export function makeTwoKlingonCombatFixture(): TwoTargetCombatFixture {
-  const sector = Array.from({ length: GRID_CELLS }, () => 0);
-  const shipIndex = coordToIndex1Based(4, 4);
-  const weakKlingonIndex = coordToIndex1Based(4, 6);
-  const strongKlingonIndex = coordToIndex1Based(2, 4);
+  const sector = Array.from({ length: TOTAL_SECTOR_GRID_CELLS }, () => 0);
+  const shipIndex = coordToDefaultSectorIndex1Based(4, 4);
+  const weakKlingonIndex = coordToDefaultSectorIndex1Based(4, 6);
+  const strongKlingonIndex = coordToDefaultSectorIndex1Based(2, 4);
 
   sector[shipIndex - 1] = 1;
   sector[weakKlingonIndex - 1] = -120;
   sector[strongKlingonIndex - 1] = -3200;
 
-  const quadrantIndex = coordToIndex1Based(4, 4);
-  const galaxy = Array.from({ length: GALAXY_CELLS }, () => 0);
+  const quadrantIndex = coordToDefaultQuadrantIndex1Based(4, 4);
+  const galaxy = Array.from({ length: TOTAL_QUADRANT_GRID_CELLS }, () => 0);
   galaxy[quadrantIndex - 1] = 200;
 
   const state = makeTestState({
@@ -66,15 +67,15 @@ export function makeTwoKlingonCombatFixture(): TwoTargetCombatFixture {
 }
 
 export function makeSingleKlingonCombatFixture(klingonStrength = -180): CombatFixture {
-  const sector = Array.from({ length: GRID_CELLS }, () => 0);
-  const shipIndex = coordToIndex1Based(4, 4);
-  const klingonIndex = coordToIndex1Based(4, 6);
+  const sector = Array.from({ length: TOTAL_SECTOR_GRID_CELLS }, () => 0);
+  const shipIndex = coordToDefaultSectorIndex1Based(4, 4);
+  const klingonIndex = coordToDefaultSectorIndex1Based(4, 6);
 
   sector[shipIndex - 1] = 1;
   sector[klingonIndex - 1] = klingonStrength;
 
-  const quadrantIndex = coordToIndex1Based(4, 4);
-  const galaxy = Array.from({ length: GALAXY_CELLS }, () => 0);
+  const quadrantIndex = coordToDefaultQuadrantIndex1Based(4, 4);
+  const galaxy = Array.from({ length: TOTAL_QUADRANT_GRID_CELLS }, () => 0);
   galaxy[quadrantIndex - 1] = 100;
 
   const state = makeTestState({
@@ -111,17 +112,17 @@ export function makeSingleKlingonCombatFixture(klingonStrength = -180): CombatFi
 }
 
 export function makeStarbaseTorpedoFixture(): TwoTargetCombatFixture {
-  const sector = Array.from({ length: GRID_CELLS }, () => 0);
-  const shipIndex = coordToIndex1Based(4, 4);
-  const targetedBaseIndex = coordToIndex1Based(4, 6);
-  const otherBaseIndex = coordToIndex1Based(2, 2);
+  const sector = Array.from({ length: TOTAL_SECTOR_GRID_CELLS }, () => 0);
+  const shipIndex = coordToDefaultSectorIndex1Based(4, 4);
+  const targetedBaseIndex = coordToDefaultSectorIndex1Based(4, 6);
+  const otherBaseIndex = coordToDefaultSectorIndex1Based(2, 2);
 
   sector[shipIndex - 1] = 1;
   sector[targetedBaseIndex - 1] = 2;
   sector[otherBaseIndex - 1] = 2;
 
-  const quadrantIndex = coordToIndex1Based(4, 4);
-  const galaxy = Array.from({ length: GALAXY_CELLS }, () => 0);
+  const quadrantIndex = coordToDefaultQuadrantIndex1Based(4, 4);
+  const galaxy = Array.from({ length: TOTAL_QUADRANT_GRID_CELLS }, () => 0);
   galaxy[quadrantIndex - 1] = 20;
 
   const state = makeTestState({

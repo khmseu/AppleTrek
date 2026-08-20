@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SeededRng } from "../src/compat/basicCompat";
+import { coordToIndex1Based } from "../src/state/gameState";
 import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
 import {
   makeStarbaseTorpedoFixture,
@@ -25,6 +26,38 @@ describe("Phase 4 combat core", () => {
 
     const currentQuadrantEncoded = result.state.galaxy[result.state.position.quadrantIndex - 1];
     expect(currentQuadrantEncoded).toBe(100);
+  });
+
+  it("phaser distance uses the state's sector size", () => {
+    const state = makeTwoKlingonCombatFixture().state;
+    const shipIndex = coordToIndex1Based(1, 1, 3);
+    const klingonIndex = coordToIndex1Based(3, 3, 3);
+    const sector = Array.from({ length: 9 }, () => 0);
+    sector[shipIndex - 1] = 1;
+    sector[klingonIndex - 1] = -8;
+
+    const result = firePhasers(
+      {
+        ...state,
+        sectorSize: 3,
+        sector,
+        position: {
+          ...state.position,
+          sectorIndex: shipIndex,
+          sector: { row: 1, col: 1 }
+        },
+        counts: {
+          ...state.counts,
+          initialKlingons: 1,
+          klingonsRemaining: 1
+        }
+      },
+      8,
+      new SeededRng(1)
+    );
+
+    expect(result.kills).toBe(0);
+    expect(result.state.sector[klingonIndex - 1]).toBeLessThan(0);
   });
 
   it("torpedo trajectory hits klingons on course", () => {

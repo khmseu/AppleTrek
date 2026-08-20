@@ -190,6 +190,29 @@ describe("Phase 5 retro panel rendering", () => {
     }
   });
 
+  it("renders sector column headers from sectorSize", () => {
+    const state = makeTestState({
+      sectorSize: 3,
+      sector: [1, 0, 0, 0, 2, 0, 0, 0, 3]
+    });
+
+    const panel = renderSectorPanel(state);
+    const lines = panel.split("\n");
+
+    expect(lines[1]).toBe("  1 2 3");
+    expect(lines.filter((line) => /^\d\s+/.test(line))).toHaveLength(3);
+  });
+
+  it("throws when sector length does not match sectorSize squared", () => {
+    const state = makeTestState({
+      sectorSize: 3,
+      sector: [1, 0, 0]
+    });
+
+    expect(() => renderSectorPanel(state)).toThrow(RangeError);
+    expect(() => renderSectorPanel(state)).toThrow(/Sector cell count mismatch/);
+  });
+
   it("renders output log with LOG header and full list when <= 10 entries", () => {
     const output = renderOutputLog(["A", "B", "C"]);
     expect(output).toBe("LOG\nA\nB\nC");

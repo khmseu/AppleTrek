@@ -1,8 +1,6 @@
 import { modCompat, truncDiv } from "../compat/basicCompat";
 import {
   coordToIndex1Based,
-  GRID_CELLS,
-  GRID_SIZE,
   type GameState
 } from "./gameState";
 import {
@@ -24,8 +22,9 @@ export interface NavigateInput {
   value: number;
 }
 
-function wrap1ToGrid(value: number): number {
-  return modCompat(value - 1, GRID_SIZE) + 1;
+function wrap1ToQuadrant(value: number, quadrantSize: number): number {
+  const zeroBased = ((value - 1) % quadrantSize + quadrantSize) % quadrantSize;
+  return zeroBased + 1;
 }
 
 function normalizeCourse(course: number): number {
@@ -44,13 +43,17 @@ function placeDeterministically(sector: number[], count: number, cellValue: numb
   }
 }
 
-function buildSectorFromQuadrantEncoding(encodedQuadrant: number, shipSectorIndex: number): number[] {
+function buildSectorFromQuadrantEncoding(
+  encodedQuadrant: number,
+  shipSectorIndex: number,
+  sectorSize: number
+): number[] {
   const encoded = Math.abs(encodedQuadrant);
   const klingons = truncDiv(encoded, 100);
   const bases = modCompat(truncDiv(encoded, 10), 10);
   const stars = modCompat(encoded, 10);
 
-  const sector = Array.from({ length: GRID_CELLS }, () => EMPTY_CELL);
+  const sector = Array.from({ length: sectorSize * sectorSize }, () => EMPTY_CELL);
   sector[shipSectorIndex - 1] = SHIP_CELL;
 
   placeDeterministically(sector, bases, STARBASE_CELL);
@@ -58,6 +61,15 @@ function buildSectorFromQuadrantEncoding(encodedQuadrant: number, shipSectorInde
   placeDeterministically(sector, klingons, KLINGON_UNIT_STRENGTH);
 
   return sector;
+}
+
+function assertGalaxySizeMatchesQuadrants(state: GameState): void {
+  const expectedCellCount = state.quadrantSize * state.quadrantSize;
+  if (state.galaxy.length !== expectedCellCount) {
+    throw new RangeError(
+      `Galaxy cell count mismatch: expected ${expectedCellCount}, got ${state.galaxy.length}`
+    );
+  }
 }
 
 function courseComponent(c2: number): number {
@@ -99,6 +111,8 @@ export function stepMovement(state: GameState, vector: CourseVector, steps: numb
     throw new RangeError(`Invalid movement steps: ${steps}`);
   }
 
+  assertGalaxySizeMatchesQuadrants(state);
+
   if (steps === 0) {
     return state;
   }
@@ -128,32 +142,33 @@ export function stepMovement(state: GameState, vector: CourseVector, steps: numb
     }
 
     if (sectorRow < 1) {
-      sectorRow = GRID_SIZE;
-      quadrantRow = wrap1ToGrid(quadrantRow - 1);
-    } else if (sectorRow > GRID_SIZE) {
+      sectorRow = state.sectorSize;
+      quadrantRow = wrap1ToQuadrant(quadrantRow - 1, state.quadrantSize);
+    } else if (sectorRow > state.sectorSize) {
       sectorRow = 1;
-      quadrantRow = wrap1ToGrid(quadrantRow + 1);
+      quadrantRow = wrap1ToQuadrant(quadrantRow + 1, state.quadrantSize);
     }
 
     if (sectorCol < 1) {
-      sectorCol = GRID_SIZE;
-      quadrantCol = wrap1ToGrid(quadrantCol - 1);
-    } else if (sectorCol > GRID_SIZE) {
+      sectorCol = state.sectorSize;
+      quadrantCol = wrap1ToQuadrant(quadrantCol - 1, state.quadrantSize);
+    } else if (sectorCol > state.sectorSize) {
       sectorCol = 1;
-      quadrantCol = wrap1ToGrid(quadrantCol + 1);
+      quadrantCol = wrap1ToQuadrant(quadrantCol + 1, state.quadrantSize);
     }
   }
 
   const oldQuadrantIndex = state.position.quadrantIndex;
   const oldSectorIndex = state.position.sectorIndex;
-  const nextQuadrantIndex = coordToIndex1Based(quadrantRow, quadrantCol, GRID_SIZE);
-  const nextSectorIndex = coordToIndex1Based(sectorRow, sectorCol, GRID_SIZE);
+  const nextQuadrantIndex = coordToIndex1Based(quadrantRow, quadrantCol, state.quadrantSize);
+  const nextSectorIndex = coordToIndex1Based(sectorRow, sectorCol, state.sectorSize);
 
   let nextSector = state.sector;
   if (nextQuadrantIndex !== oldQuadrantIndex) {
     nextSector = buildSectorFromQuadrantEncoding(
       state.galaxy[nextQuadrantIndex - 1],
-      nextSectorIndex
+      nextSectorIndex,
+      state.sectorSize
     );
   } else {
     nextSector = [...state.sector];

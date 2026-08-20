@@ -1,5 +1,9 @@
 import { SeededRng, truncDiv } from "../compat/basicCompat";
-import { GRID_SIZE, coordToIndex1Based, indexToCoord1Based, type GameState } from "./gameState";
+import {
+  coordToIndex1Based,
+  indexToCoord1Based,
+  type GameState
+} from "./gameState";
 import { EMPTY_CELL, STARBASE_CELL, STAR_CELL, isKlingonCell } from "./cells";
 import { courseToVector } from "./navigation";
 
@@ -14,8 +18,8 @@ export interface TorpedoResult {
   reason: "klingon" | "star" | "starbase" | "miss";
 }
 
-function clampToGrid(value: number): boolean {
-  return value >= 1 && value <= GRID_SIZE;
+function clampToGrid(value: number, gridSize: number): boolean {
+  return value >= 1 && value <= gridSize;
 }
 
 function updateCurrentQuadrantEncoding(state: GameState, klingonLosses: number, baseLosses: number): GameState {
@@ -70,9 +74,9 @@ function findKlingonIndices(sector: number[]): number[] {
   return indices;
 }
 
-function distanceBetween(a: number, b: number): number {
-  const aa = indexToCoord1Based(a);
-  const bb = indexToCoord1Based(b);
+function distanceBetween(a: number, b: number, gridSize: number): number {
+  const aa = indexToCoord1Based(a, gridSize);
+  const bb = indexToCoord1Based(b, gridSize);
   return Math.max(1, Math.abs(aa.row - bb.row) + Math.abs(aa.col - bb.col));
 }
 
@@ -93,7 +97,7 @@ export function firePhasers(state: GameState, energyToSpend: number, rng: Seeded
     const share = Math.max(1, truncDiv(energyToSpend, klingons.length));
 
     for (const index of klingons) {
-      const distance = distanceBetween(state.position.sectorIndex, index);
+      const distance = distanceBetween(state.position.sectorIndex, index, state.sectorSize);
       const variance = rng.nextInt(0, share);
       const damage = Math.max(1, truncDiv(share + variance, distance));
       const currentStrength = -nextSector[index - 1];
@@ -159,11 +163,11 @@ export function fireTorpedo(state: GameState, course: number): TorpedoResult {
       accY -= 1000;
     }
 
-    if (!clampToGrid(row) || !clampToGrid(col)) {
+    if (!clampToGrid(row, state.sectorSize) || !clampToGrid(col, state.sectorSize)) {
       return { state: nextState, hit: false, reason: "miss" };
     }
 
-    const index = coordToIndex1Based(row, col);
+    const index = coordToIndex1Based(row, col, state.sectorSize);
     const cell = nextState.sector[index - 1];
 
     if (isKlingonCell(cell)) {
@@ -212,7 +216,7 @@ export function enemyTurn(state: GameState, rng: SeededRng): GameState {
     }
 
     let currentIndex = index;
-    const currentCoord = indexToCoord1Based(currentIndex);
+    const currentCoord = indexToCoord1Based(currentIndex, state.sectorSize);
 
     const moveRoll = rng.nextInt(0, 99);
     if (moveRoll < 40) {
@@ -221,8 +225,12 @@ export function enemyTurn(state: GameState, rng: SeededRng): GameState {
       const targetRow = currentCoord.row + dRow;
       const targetCol = currentCoord.col + dCol;
 
-      if ((dRow !== 0 || dCol !== 0) && clampToGrid(targetRow) && clampToGrid(targetCol)) {
-        const targetIndex = coordToIndex1Based(targetRow, targetCol);
+      if (
+        (dRow !== 0 || dCol !== 0) &&
+        clampToGrid(targetRow, state.sectorSize) &&
+        clampToGrid(targetCol, state.sectorSize)
+      ) {
+        const targetIndex = coordToIndex1Based(targetRow, targetCol, state.sectorSize);
         if (sector[targetIndex - 1] === EMPTY_CELL && targetIndex !== shipIndex) {
           sector[targetIndex - 1] = sector[currentIndex - 1];
           sector[currentIndex - 1] = EMPTY_CELL;
@@ -231,7 +239,7 @@ export function enemyTurn(state: GameState, rng: SeededRng): GameState {
       }
     }
 
-    const klingonCoord = indexToCoord1Based(currentIndex);
+    const klingonCoord = indexToCoord1Based(currentIndex, state.sectorSize);
     const distance =
       Math.max(1, Math.abs(klingonCoord.row - shipCoord.row) + Math.abs(klingonCoord.col - shipCoord.col));
     const shotPower = rng.nextInt(200, 500);

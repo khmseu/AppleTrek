@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  coordToDefaultQuadrantIndex1Based,
+  coordToDefaultSectorIndex1Based,
   coordToIndex1Based,
   type GameState
 } from "../src/state/gameState";
@@ -76,6 +78,127 @@ describe("stepMovement", () => {
 
     expect(moved.position.quadrant).toEqual({ row: 1, col: 8 });
     expect(moved.position.sector).toEqual({ row: 1, col: 5 });
+  });
+
+  it("wraps each cardinal edge using independent sector/quadrant size semantics", () => {
+    const cases = [
+      {
+        name: "north edge",
+        startQuadrant: { row: 1, col: 4 },
+        startSector: { row: 1, col: 4 },
+        course: 0,
+        expectedQuadrant: { row: 8, col: 4 },
+        expectedSector: { row: 8, col: 4 }
+      },
+      {
+        name: "east edge",
+        startQuadrant: { row: 4, col: 8 },
+        startSector: { row: 4, col: 8 },
+        course: 90,
+        expectedQuadrant: { row: 4, col: 1 },
+        expectedSector: { row: 4, col: 1 }
+      },
+      {
+        name: "south edge",
+        startQuadrant: { row: 8, col: 4 },
+        startSector: { row: 8, col: 4 },
+        course: 180,
+        expectedQuadrant: { row: 1, col: 4 },
+        expectedSector: { row: 1, col: 4 }
+      },
+      {
+        name: "west edge",
+        startQuadrant: { row: 4, col: 1 },
+        startSector: { row: 4, col: 1 },
+        course: 270,
+        expectedQuadrant: { row: 4, col: 8 },
+        expectedSector: { row: 4, col: 8 }
+      }
+    ] as const;
+
+    for (const testCase of cases) {
+      const state = makeTestState({
+        position: {
+          quadrantIndex: coordToDefaultQuadrantIndex1Based(
+            testCase.startQuadrant.row,
+            testCase.startQuadrant.col
+          ),
+          quadrant: testCase.startQuadrant,
+          sectorIndex: coordToDefaultSectorIndex1Based(
+            testCase.startSector.row,
+            testCase.startSector.col
+          ),
+          sector: testCase.startSector
+        }
+      });
+
+      const moved = stepMovement(state, courseToVector(testCase.course), 1);
+
+      expect(moved.position.quadrant, testCase.name).toEqual(testCase.expectedQuadrant);
+      expect(moved.position.sector, testCase.name).toEqual(testCase.expectedSector);
+      expect(moved.position.quadrantIndex, testCase.name).toBe(
+        coordToDefaultQuadrantIndex1Based(testCase.expectedQuadrant.row, testCase.expectedQuadrant.col)
+      );
+      expect(moved.position.sectorIndex, testCase.name).toBe(
+        coordToDefaultSectorIndex1Based(testCase.expectedSector.row, testCase.expectedSector.col)
+      );
+    }
+  });
+
+  it("wraps corners and keeps next indices aligned", () => {
+    const state = makeTestState({
+      position: {
+        quadrantIndex: coordToDefaultQuadrantIndex1Based(8, 8),
+        quadrant: { row: 8, col: 8 },
+        sectorIndex: coordToDefaultSectorIndex1Based(8, 8),
+        sector: { row: 8, col: 8 }
+      }
+    });
+
+    const moved = stepMovement(state, courseToVector(135), 2);
+
+    expect(moved.position.quadrant).toEqual({ row: 1, col: 1 });
+    expect(moved.position.sector).toEqual({ row: 1, col: 1 });
+    expect(moved.position.quadrantIndex).toBe(coordToDefaultQuadrantIndex1Based(1, 1));
+    expect(moved.position.sectorIndex).toBe(coordToDefaultSectorIndex1Based(1, 1));
+  });
+
+  it("uses GameState sector and quadrant sizes for movement wrapping", () => {
+    const state = makeTestState({
+      sectorSize: 3,
+      quadrantSize: 5,
+      galaxy: Array.from({ length: 25 }, () => 0),
+      sector: Array.from({ length: 9 }, () => 0),
+      position: {
+        quadrantIndex: coordToIndex1Based(5, 5, 5),
+        quadrant: { row: 5, col: 5 },
+        sectorIndex: coordToIndex1Based(3, 3, 3),
+        sector: { row: 3, col: 3 }
+      }
+    });
+
+    const moved = stepMovement(state, courseToVector(90), 1);
+
+    expect(moved.position.quadrant).toEqual({ row: 5, col: 1 });
+    expect(moved.position.sector).toEqual({ row: 3, col: 1 });
+    expect(moved.position.quadrantIndex).toBe(coordToIndex1Based(5, 1, 5));
+    expect(moved.position.sectorIndex).toBe(coordToIndex1Based(3, 1, 3));
+    expect(moved.sector).toHaveLength(9);
+  });
+
+  it("throws when galaxy length does not match quadrantSize squared", () => {
+    const state = makeTestState({
+      quadrantSize: 9,
+      position: {
+        quadrantIndex: coordToIndex1Based(9, 9, 9),
+        quadrant: { row: 9, col: 9 },
+        sectorIndex: coordToDefaultSectorIndex1Based(4, 8),
+        sector: { row: 4, col: 8 }
+      }
+    });
+
+    expect(() => stepMovement(state, courseToVector(90), 1)).toThrow(RangeError);
+    expect(() => stepMovement(state, courseToVector(90), 1)).toThrow(/Galaxy cell count mismatch/);
   });
 });
 
@@ -222,7 +345,7 @@ describe("phase 3 command handlers", () => {
 
   it("rebuilds destination sector coherently on quadrant transitions", () => {
     const start = makeTestState();
-    const destinationQuadrantIndex = coordToIndex1Based(4, 1);
+    const destinationQuadrantIndex = coordToDefaultQuadrantIndex1Based(4, 1);
     const destinationEncoded = 312;
     const galaxy = [...start.galaxy];
     galaxy[destinationQuadrantIndex - 1] = destinationEncoded;
@@ -230,9 +353,9 @@ describe("phase 3 command handlers", () => {
     const state = makeTestState({
       galaxy,
       position: {
-        quadrantIndex: coordToIndex1Based(4, 8),
+        quadrantIndex: coordToDefaultQuadrantIndex1Based(4, 8),
         quadrant: { row: 4, col: 8 },
-        sectorIndex: coordToIndex1Based(4, 8),
+        sectorIndex: coordToDefaultSectorIndex1Based(4, 8),
         sector: { row: 4, col: 8 }
       }
     });

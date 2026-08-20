@@ -26,14 +26,21 @@ export function renderStatusPanel(state: GameState): string {
 }
 
 export function renderSectorPanel(state: GameState): string {
+  const expectedCellCount = state.sectorSize * state.sectorSize;
+  if (state.sector.length !== expectedCellCount) {
+    throw new RangeError(
+      `Sector cell count mismatch: expected ${expectedCellCount}, got ${state.sector.length}`
+    );
+  }
+
   const lines: string[] = [];
   lines.push("SECTOR");
-  lines.push("  1 2 3 4 5 6 7 8");
+  lines.push(`  ${Array.from({ length: state.sectorSize }, (_, index) => index + 1).join(" ")}`);
 
-  for (let row = 1; row <= state.gridSize; row += 1) {
+  for (let row = 1; row <= state.sectorSize; row += 1) {
     const cells: string[] = [];
-    for (let col = 1; col <= state.gridSize; col += 1) {
-      const index = (row - 1) * state.gridSize + (col - 1);
+    for (let col = 1; col <= state.sectorSize; col += 1) {
+      const index = (row - 1) * state.sectorSize + (col - 1);
       cells.push(sectorGlyph(state.sector[index]));
     }
     lines.push(`${row} ${cells.join(" ")}`);
