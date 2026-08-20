@@ -32,20 +32,22 @@ describe("modCompat", () => {
 });
 
 describe("boolean helpers", () => {
-  it("maps booleans to BASIC-style values", () => {
-    expect(boolToBasic(true)).toBe(-1);
+  it("maps booleans to Apple Integer BASIC-style values", () => {
+    expect(boolToBasic(true)).toBe(1);
     expect(boolToBasic(false)).toBe(0);
-    expect(boolToBasic(1)).toBe(-1);
+    expect(boolToBasic(1)).toBe(1);
     expect(boolToBasic(0)).toBe(0);
   });
 
-  it("handles NOT, AND, OR with BASIC-style semantics", () => {
+  it("handles NOT, AND, OR as signed 16-bit bitwise operators", () => {
     expect(basicNot(0)).toBe(-1);
-    expect(basicNot(4)).toBe(0);
-    expect(basicAnd(-1, -1)).toBe(-1);
+    expect(basicNot(4)).toBe(-5);
+    expect(basicAnd(6, 3)).toBe(2);
+    expect(basicAnd(-1, 3)).toBe(3);
     expect(basicAnd(-1, 0)).toBe(0);
     expect(basicOr(0, 0)).toBe(0);
-    expect(basicOr(0, 3)).toBe(-1);
+    expect(basicOr(0, 3)).toBe(3);
+    expect(basicOr(32768, 0)).toBe(-32768);
   });
 });
 

@@ -16,10 +16,26 @@ import { makeTestState } from "./helpers/testState";
 
 describe("courseToVector", () => {
   it("matches known cardinal approximations", () => {
-    expect(courseToVector(0)).toEqual({ dx: 0.5, dy: -1002.5 });
-    expect(courseToVector(90)).toEqual({ dx: 1002.5, dy: 0.5 });
-    expect(courseToVector(180)).toEqual({ dx: -0.5, dy: 1002.5 });
-    expect(courseToVector(270)).toEqual({ dx: -1002.5, dy: -0.5 });
+    expect(courseToVector(0)).toEqual({ dx: 0, dy: -1002 });
+    expect(courseToVector(90)).toEqual({ dx: 1002, dy: 0 });
+    expect(courseToVector(180)).toEqual({ dx: 0, dy: 1002 });
+    expect(courseToVector(270)).toEqual({ dx: -1002, dy: 0 });
+  });
+
+  it("uses integer-only course components", () => {
+    const vector = courseToVector(45);
+
+    expect(Number.isInteger(vector.dx)).toBe(true);
+    expect(Number.isInteger(vector.dy)).toBe(true);
+  });
+
+  it("normalizes signed zero course components", () => {
+    const cardinalVectors = [courseToVector(0), courseToVector(90), courseToVector(180), courseToVector(270)];
+
+    for (const vector of cardinalVectors) {
+      expect(Object.is(vector.dx, -0)).toBe(false);
+      expect(Object.is(vector.dy, -0)).toBe(false);
+    }
   });
 
   it("keeps quadrant sign behavior", () => {

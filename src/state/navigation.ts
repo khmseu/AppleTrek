@@ -81,15 +81,19 @@ function courseComponent(c2: number): number {
     38 * (c2 - 45) * (c2 > 45 ? 1 : 0) -
     58 * (c2 - 60) * (c2 > 60 ? 1 : 0);
 
-  return (c3 + 5) / 10;
+  return truncDiv(c3 + 5, 10);
+}
+
+function normalizeSignedZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
 }
 
 /**
  * Converts a compass course in degrees into the original game's movement vector.
  *
  * Courses are normalized into 0..359, including negative inputs. The resulting
- * vector intentionally preserves the Applesoft approximation rather than using
- * trigonometric unit vectors.
+ * vector intentionally preserves the Apple Integer BASIC approximation rather
+ * than using trigonometric unit vectors, including integer-only component math.
  */
 export function courseToVector(course: number): CourseVector {
   const normalized = normalizeCourse(course);
@@ -112,7 +116,10 @@ export function courseToVector(course: number): CourseVector {
     dx = -dx;
   }
 
-  return { dx, dy };
+  return {
+    dx: normalizeSignedZero(dx),
+    dy: normalizeSignedZero(dy)
+  };
 }
 
 /**

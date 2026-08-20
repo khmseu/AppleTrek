@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-**Apple Trek** is a browser-based TypeScript port of the classic Applesoft BASIC game from the Apple II era. The goal is to recreate the original Trek spaceship exploration and combat game as a fully client-side web app, prioritizing gameplay parity with the original while providing a retro terminal UI and optional modern visual layer.
+**Apple Trek** is a browser-based TypeScript port of the classic Apple Integer BASIC game from the Apple II era. The goal is to recreate the original Trek spaceship exploration and combat game as a fully client-side web app, prioritizing gameplay parity with the original while providing a retro terminal UI and optional modern visual layer.
 
-**Original Source:** [apple_trek.bas](apple_trek.bas) — Reference Applesoft BASIC source code
+**Original Source:** [apple_trek.bas](apple_trek.bas) — Reference Apple Integer BASIC source code
 **Reference Binary:** [apple_trek.dsk](apple_trek.dsk) — Apple II disk image of the original game
 
 ---
@@ -15,7 +15,7 @@
 2. **No Framework:** Plain Vite + TypeScript (minimal dependencies, maximum control)
 3. **TDD-First:** Tests written before implementation; minimal code to pass
 4. **Deterministic RNG:** Seeded LCG-based random number generator for reproducible gameplay
-5. **Applesoft Compatibility:** Preserve BASIC semantics intentionally (e.g., booleans: -1 = true, 0 = false)
+5. **Apple Integer BASIC Compatibility:** Preserve integer-only BASIC semantics intentionally (e.g., relational booleans: 1 = true, 0 = false; logical operators are signed 16-bit bitwise operations)
 6. **Modular Phases:** 6-phase development roadmap with strict TDD boundaries
 
 ---
@@ -34,13 +34,13 @@ npm run preview   # Preview built output
 ## Project Structure
 
 ```
-apple_trek.bas          # Original Applesoft BASIC source (reference)
+apple_trek.bas          # Original Apple Integer BASIC source (reference)
 apple_trek.dsk          # Apple II binary (reference)
 index.html              # HTML5 entry point (loads src/main.ts)
 src/
   ├── main.ts           # App entry point (currently renders scaffold)
   └── compat/
-      └── basicCompat.ts    # Applesoft compatibility layer
+      └── basicCompat.ts    # Apple Integer BASIC compatibility layer
 tests/
   └── compat.test.ts    # Vitest tests for compat functions
 plans/
@@ -58,12 +58,12 @@ plans/
 ### Current Implementation
 
 #### Compat Layer (`src/compat/basicCompat.ts`)
-Applesoft compatibility primitives that preserve BASIC semantics:
-- **`truncDiv(a, b)`** — Integer division toward zero (Applesoft-style, not floor)
-- **`modCompat(a, b)`** — Modulo operation matching Applesoft behavior
-- **`boolToBasic(b: boolean): number`** — Convert JS boolean to BASIC (-1 for true, 0 for false)
-- **`basicNot(n: number): number`** — BASIC NOT operator
-- **`basicAnd(a, b)`**, **`basicOr(a, b)`** — BASIC AND/OR operators
+Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
+- **`truncDiv(a, b)`** — Integer division toward zero (Integer BASIC-style, not floor)
+- **`modCompat(a, b)`** — Modulo operation matching Integer BASIC behavior
+- **`boolToBasic(b: boolean): number`** — Convert JS boolean to BASIC (1 for true, 0 for false)
+- **`basicNot(n: number): number`** — BASIC NOT as signed 16-bit bitwise complement
+- **`basicAnd(a, b)`**, **`basicOr(a, b)`** — BASIC AND/OR as signed 16-bit bitwise operators
 - **`SeededRng`** — Class with LCG-based deterministic random number generation
   - Seed with a fixed number for reproducible gameplay
   - Range queries: `rng.nextInt(1, 8)` returns integer in range [1, 8]
@@ -88,7 +88,9 @@ Applesoft compatibility primitives that preserve BASIC semantics:
    - Never use `Math.random()` directly
 
 3. **BASIC Semantics:**
-   - Booleans: -1 (true), 0 (false) — not 1/0
+   - Relational booleans: 1 (true), 0 (false)
+   - NOT/AND/OR are signed 16-bit bitwise operators, not JavaScript truthiness wrappers
+   - Arithmetic is integer-only; truncate division toward zero where BASIC would divide
    - Integer division truncates toward zero, not floor
    - Preserve these quirks intentionally for parity
 
@@ -132,7 +134,7 @@ Applesoft compatibility primitives that preserve BASIC semantics:
 ### ✅ DO
 - Write tests before implementing
 - Use `SeededRng` for all randomness
-- Preserve Applesoft semantics (booleans, integer division)
+- Preserve Apple Integer BASIC semantics (1/0 relational booleans, signed 16-bit bitwise logic, integer-only arithmetic)
 - Check against `apple_trek.bas` for original logic
 - Validate determinism with fixed seeds in tests
 - Run full test suite before committing
@@ -141,7 +143,7 @@ Applesoft compatibility primitives that preserve BASIC semantics:
 - Use `Math.random()` directly (use `SeededRng` instead)
 - Change BASIC semantics unless explicitly required
 - Skip TDD discipline for the sake of speed
-- Assume JS number semantics match Applesoft (they don't)
+- Assume JS number semantics match Apple Integer BASIC (they don't)
 - Modify game state outside of dedicated state module (coming in Phase 2)
 
 ---
@@ -181,7 +183,7 @@ Applesoft compatibility primitives that preserve BASIC semantics:
 ### For Questions or Ambiguities
 - Refer to [apple_trek.bas](apple_trek.bas) as the source of truth for game logic
 - Check the phase plan for explicit test and step guidance
-- Preserve Applesoft semantics unless the plan explicitly says otherwise
+- Preserve Apple Integer BASIC semantics unless the plan explicitly says otherwise
 
 ---
 
