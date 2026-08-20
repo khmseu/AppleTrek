@@ -1,4 +1,9 @@
-import { SeededRng } from "../compat/basicCompat";
+import {
+  APPLE_II_MEMORY,
+  APPLE_II_MACHINE,
+  APPLE_II_ROM_CALLS,
+  SeededRng
+} from "../compat/basicCompat";
 import {
   createCommandSession,
   dispatchControl,
@@ -31,6 +36,10 @@ function numberFromInput(input: HTMLInputElement): number {
  * @throws {Error} When expected DOM nodes cannot be found after template setup.
  */
 export function mountBrowserTerminal(app: HTMLElement): void {
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.HOME);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDLFT, 0x00);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDWDTH, 0x28);
+
   const rng = new SeededRng(1701);
   let session = createCommandSession();
   const styleElementId = "apple-trek-terminal-style";
@@ -216,6 +225,9 @@ export function mountBrowserTerminal(app: HTMLElement): void {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    APPLE_II_MACHINE.peek(APPLE_II_MEMORY.KBD);
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.KBDSTRB, 0x00);
+
     const prompt = commandInput.value.trim();
     if (prompt.length === 0) {
       return;
@@ -234,6 +246,9 @@ export function mountBrowserTerminal(app: HTMLElement): void {
 
   app.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
+      APPLE_II_MACHINE.peek(APPLE_II_MEMORY.KBD);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.KBDSTRB, 0x00);
+
       const action = button.dataset.action;
       if (!action) {
         return;

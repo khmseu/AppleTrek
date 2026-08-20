@@ -76,6 +76,93 @@ export function basicOr(a: unknown, b: unknown): number {
   );
 }
 
+/** Apple II zero-page and soft-switch addresses touched by the original BASIC source. */
+export const APPLE_II_MEMORY = Object.freeze({
+  WNDLFT: 0x20,
+  WNDWDTH: 0x21,
+  WNDTOP: 0x22,
+  WNDBTM: 0x23,
+  TEXT_COLOR: 0x32,
+  KBD: 0xc000,
+  KBDSTRB: 0xc010,
+  TXTCLR: 0xc050,
+  MIXCLR: 0xc052,
+  TXTSET: 0xc051,
+  HIRES_PAGE: 0x4000,
+  SPRITE_VECTOR: 0x3fa1,
+  SPRITE_COLOR: 0x3fa2,
+  TONE_LATCH: 0x3fa7,
+  SPRITE_SPEED: 0x3fb0,
+  COURSE_TABLE_BASE: 0x3fbf
+} as const);
+
+/** Apple II ROM routines called by the original BASIC source. */
+export const APPLE_II_ROM_CALLS = Object.freeze({
+  SET_INVERSE_TEXT: 0xfe80,
+  SET_NORMAL_TEXT: 0xfe84,
+  CLEAR_TO_EOL: 0xfc9c,
+  HOME: 0xfc58
+} as const);
+
+function toUnsigned16BitAddress(address: number): number {
+  return address & INTEGER_BASIC_WORD_MASK;
+}
+
+/**
+ * Placeholder for Apple II `PEEK` reads dropped from the browser port.
+ *
+ * The current game logic does not emulate Apple II memory-mapped I/O, so this
+ * function returns `0` for every address while keeping original address values
+ * visible at call sites and tests. Negative Integer BASIC addresses are treated
+ * as signed 16-bit addresses; e.g. `-16384` maps to `$C000`.
+ */
+function peekNoopImpl(address: number): number {
+  toUnsigned16BitAddress(address);
+  return 0;
+}
+
+/**
+ * Placeholder for Apple II `POKE` writes dropped from the browser port.
+ *
+ * Parameters are accepted for documentation/parity only. The function performs
+ * no mutation because the browser renderer owns display state instead of Apple
+ * II text windows, soft switches, or sound/sprite memory.
+ */
+function pokeNoopImpl(address: number, value: number): void {
+  toUnsigned16BitAddress(address);
+  Math.trunc(value);
+}
+
+/**
+ * Placeholder for Apple II `CALL` routines dropped from the browser port.
+ *
+ * The original program used ROM calls such as `$FC58` HOME and `$FC9C` clear to
+ * end-of-line, plus high-memory animation/sound hooks. They intentionally do
+ * nothing in the web port but remain named through `APPLE_II_ROM_CALLS`.
+ */
+function callNoopImpl(address: number): void {
+  toUnsigned16BitAddress(address);
+}
+
+/** Mutable no-op machine interface used by translated call sites and tests. */
+export const APPLE_II_MACHINE = {
+  peek: peekNoopImpl,
+  poke: pokeNoopImpl,
+  call: callNoopImpl
+};
+
+export function peekNoop(address: number): number {
+  return APPLE_II_MACHINE.peek(address);
+}
+
+export function pokeNoop(address: number, value: number): void {
+  APPLE_II_MACHINE.poke(address, value);
+}
+
+export function callNoop(address: number): void {
+  APPLE_II_MACHINE.call(address);
+}
+
 /**
  * Deterministic linear-congruential random number generator for reproducible games.
  *

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
-import { SeededRng } from "../src/compat/basicCompat";
+import { APPLE_II_MACHINE, APPLE_II_MEMORY, APPLE_II_ROM_CALLS, SeededRng } from "../src/compat/basicCompat";
 import { enemyTurn, firePhasers, fireTorpedo, latchMissionOutcome } from "../src/state";
 import { coordToIndex1Based, type GameState } from "../src/state/gameState";
 import { navigate } from "../src/state/navigation";
@@ -174,6 +174,33 @@ describe("Phase 5 command routing", () => {
     expect(routed.log).toContain("DAMAGE REPORT");
     expect(routed.log).toContain("SR SENSORS DAMAGED 1.00");
     expect(routed.log).toContain("PHASERS DAMAGED 2.50");
+  });
+
+  it("invokes machine-interface placeholders for report commands", () => {
+    const originalCall = APPLE_II_MACHINE.call;
+    const originalPoke = APPLE_II_MACHINE.poke;
+    const calls: number[] = [];
+    const pokes: Array<[number, number]> = [];
+    APPLE_II_MACHINE.call = (address: number) => {
+      calls.push(address);
+      originalCall(address);
+    };
+    APPLE_II_MACHINE.poke = (address: number, value: number) => {
+      pokes.push([address, value]);
+      originalPoke(address, value);
+    };
+
+    const session = createCommandSession(makeSingleKlingonCombatFixture().state);
+    dispatchPrompt(session, "DAMAGE", new SeededRng(1));
+    dispatchPrompt(session, "COMPUTER", new SeededRng(1));
+    dispatchPrompt(session, "PROBE", new SeededRng(1));
+
+    expect(calls).toContain(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
+    expect(pokes).toContainEqual([APPLE_II_MEMORY.WNDTOP, 0x0d]);
+    expect(pokes).toContainEqual([APPLE_II_MEMORY.SPRITE_VECTOR, 0x01]);
+
+    APPLE_II_MACHINE.call = originalCall;
+    APPLE_II_MACHINE.poke = originalPoke;
   });
 
   it("routes torpedo loading with Integer BASIC energy accounting", () => {

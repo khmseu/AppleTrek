@@ -1,4 +1,4 @@
-import { modCompat, truncDiv } from "../compat/basicCompat";
+import { APPLE_II_MACHINE, APPLE_II_MEMORY, modCompat, truncDiv } from "../compat/basicCompat";
 import {
   coordToIndex1Based,
   type GameState
@@ -75,6 +75,8 @@ function assertGalaxySizeMatchesQuadrants(state: GameState): void {
 }
 
 function courseComponent(c2: number): number {
+  APPLE_II_MACHINE.peek(APPLE_II_MEMORY.COURSE_TABLE_BASE + c2);
+
   const c3 =
     167 * c2 -
     26 * (c2 - 30) * (c2 > 30 ? 1 : 0) -

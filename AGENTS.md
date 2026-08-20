@@ -64,6 +64,8 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
 - **`boolToBasic(b: boolean): number`** — Convert JS boolean to BASIC (1 for true, 0 for false)
 - **`basicNot(n: number): number`** — BASIC NOT as signed 16-bit bitwise complement
 - **`basicAnd(a, b)`**, **`basicOr(a, b)`** — BASIC AND/OR as signed 16-bit bitwise operators
+- **`APPLE_II_MEMORY`**, **`APPLE_II_ROM_CALLS`** — Hex constants for original PEEK/POKE/CALL addresses
+- **`peekNoop`**, **`pokeNoop`**, **`callNoop`** — Browser no-op placeholders for dropped Apple II machine-interface hooks
 - **`SeededRng`** — Class with LCG-based deterministic random number generation
   - Seed with a fixed number for reproducible gameplay
   - Range queries: `rng.nextInt(1, 8)` returns integer in range [1, 8]
@@ -91,6 +93,7 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
    - Relational booleans: 1 (true), 0 (false)
    - NOT/AND/OR are signed 16-bit bitwise operators, not JavaScript truthiness wrappers
    - Arithmetic is integer-only; truncate division toward zero where BASIC would divide
+   - Preserve dropped PEEK/POKE/CALL hooks as no-op compatibility functions with hex address constants, rather than deleting their intent
    - Integer division truncates toward zero, not floor
    - Preserve these quirks intentionally for parity
 

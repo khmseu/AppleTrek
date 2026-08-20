@@ -1,3 +1,4 @@
+import { APPLE_II_MACHINE, APPLE_II_ROM_CALLS } from "../compat/basicCompat";
 import { type GameState } from "../state/gameState";
 import { sectorGlyph } from "../state/cells";
 
@@ -11,6 +12,9 @@ function formatTickClock(stardate: number, ticks: number): string {
 
 /** Renders the compact status panel shown beside the sector grid. */
 export function renderStatusPanel(state: GameState): string {
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT);
+
   const lines = [
     "STATUS",
     `STARDATE ${formatTickClock(state.clock.stardate, state.clock.ticks)}`,
@@ -36,6 +40,9 @@ export function renderStatusPanel(state: GameState): string {
  * @throws {RangeError} When sector length does not match `sectorSize^2`.
  */
 export function renderSectorPanel(state: GameState): string {
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT);
+
   const expectedCellCount = state.sectorSize * state.sectorSize;
   if (state.sector.length !== expectedCellCount) {
     throw new RangeError(

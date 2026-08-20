@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  APPLE_II_MEMORY,
+  APPLE_II_MACHINE,
+  APPLE_II_ROM_CALLS,
   basicAnd,
   basicNot,
   basicOr,
   boolToBasic,
+  callNoop,
   modCompat,
+  peekNoop,
+  pokeNoop,
   SeededRng,
   truncDiv
 } from "../src/compat/basicCompat";
@@ -48,6 +54,48 @@ describe("boolean helpers", () => {
     expect(basicOr(0, 0)).toBe(0);
     expect(basicOr(0, 3)).toBe(3);
     expect(basicOr(32768, 0)).toBe(-32768);
+  });
+});
+
+describe("Apple II machine interface no-ops", () => {
+  it("exposes original PEEK/POKE/CALL addresses as hex constants", () => {
+    expect(APPLE_II_MEMORY.WNDTOP).toBe(0x22);
+    expect(APPLE_II_MEMORY.KBD).toBe(0xc000);
+    expect(APPLE_II_MEMORY.KBDSTRB).toBe(0xc010);
+    expect(APPLE_II_MEMORY.TXTCLR).toBe(0xc050);
+    expect(APPLE_II_MEMORY.MIXCLR).toBe(0xc052);
+    expect(APPLE_II_MEMORY.TXTSET).toBe(0xc051);
+    expect(APPLE_II_MEMORY.HIRES_PAGE).toBe(0x4000);
+    expect(APPLE_II_MEMORY.SPRITE_VECTOR).toBe(0x3fa1);
+    expect(APPLE_II_MEMORY.SPRITE_COLOR).toBe(0x3fa2);
+    expect(APPLE_II_MEMORY.TONE_LATCH).toBe(0x3fa7);
+    expect(APPLE_II_MEMORY.SPRITE_SPEED).toBe(0x3fb0);
+    expect(APPLE_II_MEMORY.COURSE_TABLE_BASE).toBe(0x3fbf);
+
+    expect(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT).toBe(0xfe80);
+    expect(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT).toBe(0xfe84);
+    expect(APPLE_II_ROM_CALLS.CLEAR_TO_EOL).toBe(0xfc9c);
+    expect(APPLE_II_ROM_CALLS.HOME).toBe(0xfc58);
+  });
+
+  it("keeps dropped PEEK/POKE/CALL hooks as deterministic no-ops", () => {
+    expect(peekNoop(-0x4000)).toBe(0);
+    expect(() => pokeNoop(APPLE_II_MEMORY.WNDTOP, 0x0b)).not.toThrow();
+    expect(() => callNoop(-0x03a8)).not.toThrow();
+  });
+
+  it("exposes mutable machine hooks for translated invocation sites", () => {
+    const originalPeek = APPLE_II_MACHINE.peek;
+    let seenAddress = 0;
+    APPLE_II_MACHINE.peek = (address: number) => {
+      seenAddress = address;
+      return originalPeek(address);
+    };
+
+    expect(peekNoop(APPLE_II_MEMORY.KBD)).toBe(0);
+    expect(seenAddress).toBe(APPLE_II_MEMORY.KBD);
+
+    APPLE_II_MACHINE.peek = originalPeek;
   });
 });
 

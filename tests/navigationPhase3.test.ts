@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { APPLE_II_MACHINE, APPLE_II_MEMORY } from "../src/compat/basicCompat";
 import {
   coordToDefaultQuadrantIndex1Based,
   coordToDefaultSectorIndex1Based,
@@ -27,6 +28,20 @@ describe("courseToVector", () => {
 
     expect(Number.isInteger(vector.dx)).toBe(true);
     expect(Number.isInteger(vector.dy)).toBe(true);
+  });
+
+  it("invokes the original course-table PEEK placeholder", () => {
+    const originalPeek = APPLE_II_MACHINE.peek;
+    const addresses: number[] = [];
+    APPLE_II_MACHINE.peek = (address: number) => {
+      addresses.push(address);
+      return originalPeek(address);
+    };
+
+    courseToVector(45);
+
+    expect(addresses).toContain(APPLE_II_MEMORY.COURSE_TABLE_BASE + 45);
+    APPLE_II_MACHINE.peek = originalPeek;
   });
 
   it("normalizes signed zero course components", () => {

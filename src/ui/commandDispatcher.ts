@@ -1,4 +1,9 @@
-import { SeededRng } from "../compat/basicCompat";
+import {
+  APPLE_II_MEMORY,
+  APPLE_II_MACHINE,
+  APPLE_II_ROM_CALLS,
+  SeededRng
+} from "../compat/basicCompat";
 import { isKlingonCell } from "../state/cells";
 import { enemyTurn, firePhasers, fireTorpedo } from "../state/combat";
 import { latchMissionOutcome, triggerSelfDestruct } from "../state/endgame";
@@ -82,6 +87,8 @@ function formatDamageDuration(value: number): string {
 }
 
 function damageReportLines(state: GameState): string[] {
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
+
   const damaged = state.damage
     .map((value, index) => ({ value, label: DAMAGE_LABELS[index] ?? `DEVICE ${index + 1}` }))
     .filter((device) => device.value > 0)
@@ -91,6 +98,9 @@ function damageReportLines(state: GameState): string[] {
 }
 
 function computerReportLines(state: GameState): string[] {
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDTOP, 0x0d);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
+
   return [
     "COMPUTER REPORT",
     `QUADRANT ${state.position.quadrant.row}-${state.position.quadrant.col}`,
@@ -101,6 +111,9 @@ function computerReportLines(state: GameState): string[] {
 }
 
 function probeReportLines(state: GameState): string[] {
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x01);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0x32);
+
   const klingons = state.sector
     .map((cell, index) => ({ cell, index: index + 1 }))
     .filter(({ cell }) => isKlingonCell(cell))
@@ -113,6 +126,8 @@ function probeReportLines(state: GameState): string[] {
 }
 
 function loadTorpedoes(state: GameState, amount: number): GameState {
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.TONE_LATCH, 0xff);
+
   const nextTorpedoes = state.ship.torpedoes + amount;
   if (nextTorpedoes < 0 || nextTorpedoes > state.ship.torpedoesMax) {
     throw new RangeError(`Invalid torpedo load: ${amount}`);
@@ -200,6 +215,9 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   if (command.kind === "phasers") {
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x01);
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xb4);
+
     const result = firePhasers(state, command.value, rng);
     return {
       state: latchMissionOutcome(enemyTurn(result.state, rng)),
@@ -237,11 +255,16 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   if (command.kind === "self-destruct") {
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.TONE_LATCH, 0xff);
+
     return {
       state: triggerSelfDestruct(state),
       logLines: []
     };
   }
+
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x06);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xc8);
 
   const result = fireTorpedo(state, command.course);
   return {
