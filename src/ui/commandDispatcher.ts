@@ -3,45 +3,91 @@ import { enemyTurn, firePhasers, fireTorpedo } from "../state/combat";
 import { triggerSelfDestruct } from "../state/endgame";
 import { createInitialGameState, type GameState } from "../state/gameState";
 import { navigate, setShieldsPercent } from "../state/navigation";
-import { parsePrompt, type ParsedCommand } from "./commandParser";
+import { assertNever } from "../utils/assertNever";
+import { formatParsedCommand, parsePrompt, type ParsedCommand } from "./commandParser";
 
 export interface CommandSession {
   state: GameState;
   log: string[];
 }
 
-export interface ControlCommandInput {
-  action: "ion" | "warp" | "shields" | "phasers" | "torpedo" | "self-destruct";
-  course?: number;
-  value?: number;
+export const CONTROL_ACTIONS = Object.freeze([
+  "ion",
+  "warp",
+  "shields",
+  "phasers",
+  "torpedo",
+  "self-destruct"
+] as const);
+
+const CONTROL_ACTION_SET: ReadonlySet<string> = new Set(CONTROL_ACTIONS);
+
+export type ControlAction = (typeof CONTROL_ACTIONS)[number];
+
+export function isControlAction(value: string): value is ControlAction {
+  return CONTROL_ACTION_SET.has(value);
 }
 
-function commandToLogText(command: ParsedCommand): string {
-  if (command.kind === "ion") {
-    return `ION ${command.course} ${command.value}`;
+export type ControlCommandInput =
+  | { action: "ion"; course: number; value: number }
+  | { action: "warp"; course: number; value: number }
+  | { action: "shields"; value: number }
+  | { action: "phasers"; value: number }
+  | { action: "torpedo"; course: number }
+  | { action: "self-destruct" };
+
+function requireIntegerField(value: number | undefined, label: string): number {
+  if (value === undefined) {
+    throw new RangeError(`Missing ${label}`);
   }
 
-  if (command.kind === "warp") {
-    return `WARP ${command.course} ${command.value}`;
+  if (!Number.isInteger(value)) {
+    throw new RangeError(`Invalid ${label}: ${String(value)}`);
   }
 
-  if (command.kind === "shields") {
-    return `SHIELDS ${command.value}`;
-  }
-
-  if (command.kind === "phasers") {
-    return `PHASERS ${command.value}`;
-  }
-
-  if (command.kind === "self-destruct") {
-    return "DESTRUCT";
-  }
-
-  return `TORPEDO ${command.course}`;
+  return value;
 }
 
 function appendLog(log: string[], line: string): string[] {
   return [...log, line];
+}
+
+function controlToParsed(input: ControlCommandInput): ParsedCommand {
+  switch (input.action) {
+    case "ion":
+      return {
+        kind: "ion",
+        course: requireIntegerField(input.course, "course"),
+        value: requireIntegerField(input.value, "value")
+      };
+    case "warp":
+      return {
+        kind: "warp",
+        course: requireIntegerField(input.course, "course"),
+        value: requireIntegerField(input.value, "value")
+      };
+    case "shields":
+      return {
+        kind: "shields",
+        value: requireIntegerField(input.value, "value")
+      };
+    case "phasers":
+      return {
+        kind: "phasers",
+        value: requireIntegerField(input.value, "value")
+      };
+    case "torpedo":
+      return {
+        kind: "torpedo",
+        course: requireIntegerField(input.course, "course")
+      };
+    case "self-destruct":
+      return {
+        kind: "self-destruct"
+      };
+    default:
+      return assertNever(input, "control action input");
+  }
 }
 
 function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng): GameState {
@@ -83,7 +129,7 @@ export function createCommandSession(initialState?: GameState): CommandSession {
 
 export function dispatchParsed(session: CommandSession, command: ParsedCommand, rng: SeededRng): CommandSession {
   const nextState = executeParsed(session.state, command, rng);
-  const nextLog = appendLog(session.log, `> ${commandToLogText(command)}`);
+  const nextLog = appendLog(session.log, `> ${formatParsedCommand(command)}`);
   return {
     state: nextState,
     log: nextLog
@@ -96,27 +142,7 @@ export function dispatchPrompt(session: CommandSession, prompt: string, rng: See
 }
 
 export function controlToPrompt(input: ControlCommandInput): string {
-  if (input.action === "ion") {
-    return `ION ${input.course ?? 0} ${input.value ?? 0}`;
-  }
-
-  if (input.action === "warp") {
-    return `WARP ${input.course ?? 0} ${input.value ?? 0}`;
-  }
-
-  if (input.action === "shields") {
-    return `SHIELDS ${input.value ?? 0}`;
-  }
-
-  if (input.action === "phasers") {
-    return `PHASERS ${input.value ?? 0}`;
-  }
-
-  if (input.action === "self-destruct") {
-    return "DESTRUCT";
-  }
-
-  return `TORPEDO ${input.course ?? 0}`;
+  return formatParsedCommand(controlToParsed(input));
 }
 
 export function dispatchControl(

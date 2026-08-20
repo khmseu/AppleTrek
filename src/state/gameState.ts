@@ -1,4 +1,11 @@
 import { modCompat, SeededRng, truncDiv } from "../compat/basicCompat";
+import {
+  EMPTY_CELL,
+  KLINGON_UNIT_STRENGTH,
+  SHIP_CELL,
+  STARBASE_CELL,
+  STAR_CELL
+} from "./cells";
 
 export const GRID_SIZE = 8;
 export const GRID_CELLS = GRID_SIZE * GRID_SIZE;
@@ -8,12 +15,6 @@ const END_STARDATE = 3427;
 const MAX_ENERGY = 5000;
 const START_SHIELD_PERCENT = 50;
 const MAX_TORPEDOES = 10;
-const KLINGON_UNIT_STRENGTH = -3800;
-
-const EMPTY_CELL = 0;
-const SHIP_CELL = 1;
-const STARBASE_CELL = 2;
-const STAR_CELL = 3;
 
 export interface GridCoord1Based {
   row: number;

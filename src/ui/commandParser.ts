@@ -1,3 +1,5 @@
+import { assertNever } from "../utils/assertNever";
+
 export type ParsedCommand =
   | { kind: "ion"; course: number; value: number }
   | { kind: "warp"; course: number; value: number }
@@ -5,6 +7,25 @@ export type ParsedCommand =
   | { kind: "phasers"; value: number }
   | { kind: "torpedo"; course: number }
   | { kind: "self-destruct" };
+
+export function formatParsedCommand(command: ParsedCommand): string {
+  switch (command.kind) {
+    case "ion":
+      return `ION ${command.course} ${command.value}`;
+    case "warp":
+      return `WARP ${command.course} ${command.value}`;
+    case "shields":
+      return `SHIELDS ${command.value}`;
+    case "phasers":
+      return `PHASERS ${command.value}`;
+    case "torpedo":
+      return `TORPEDO ${command.course}`;
+    case "self-destruct":
+      return "DESTRUCT";
+    default:
+      return assertNever(command, "parsed command kind");
+  }
+}
 
 function parseInteger(input: string, label: string): number {
   const value = Number(input);

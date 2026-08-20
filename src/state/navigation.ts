@@ -5,12 +5,13 @@ import {
   GRID_SIZE,
   type GameState
 } from "./gameState";
-
-const EMPTY_CELL = 0;
-const SHIP_CELL = 1;
-const STARBASE_CELL = 2;
-const STAR_CELL = 3;
-const KLINGON_UNIT_STRENGTH = -3800;
+import {
+  EMPTY_CELL,
+  KLINGON_UNIT_STRENGTH,
+  SHIP_CELL,
+  STARBASE_CELL,
+  STAR_CELL
+} from "./cells";
 
 export interface CourseVector {
   dx: number;

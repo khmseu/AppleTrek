@@ -1,4 +1,5 @@
 import { type GameState } from "../state/gameState";
+import { sectorGlyph } from "../state/cells";
 
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
@@ -6,22 +7,6 @@ function pad(value: number): string {
 
 function formatTickClock(stardate: number, ticks: number): string {
   return `${stardate}.${pad(ticks)}`;
-}
-
-function sectorGlyph(cell: number): string {
-  if (cell === 0) {
-    return ".";
-  }
-  if (cell === 1) {
-    return "E";
-  }
-  if (cell === 2) {
-    return "B";
-  }
-  if (cell === 3) {
-    return "S";
-  }
-  return "K";
 }
 
 export function renderStatusPanel(state: GameState): string {

@@ -1,10 +1,7 @@
 import { SeededRng, truncDiv } from "../compat/basicCompat";
 import { GRID_SIZE, coordToIndex1Based, indexToCoord1Based, type GameState } from "./gameState";
+import { EMPTY_CELL, STARBASE_CELL, STAR_CELL, isKlingonCell } from "./cells";
 import { courseToVector } from "./navigation";
-
-const EMPTY_CELL = 0;
-const STARBASE_CELL = 2;
-const STAR_CELL = 3;
 
 export interface PhaserResult {
   state: GameState;
@@ -66,7 +63,7 @@ function applyKlingonKills(state: GameState, kills: number): GameState {
 function findKlingonIndices(sector: number[]): number[] {
   const indices: number[] = [];
   for (let i = 0; i < sector.length; i += 1) {
-    if (sector[i] < 0) {
+    if (isKlingonCell(sector[i])) {
       indices.push(i + 1);
     }
   }
@@ -169,7 +166,7 @@ export function fireTorpedo(state: GameState, course: number): TorpedoResult {
     const index = coordToIndex1Based(row, col);
     const cell = nextState.sector[index - 1];
 
-    if (cell < 0) {
+    if (isKlingonCell(cell)) {
       nextState.sector[index - 1] = EMPTY_CELL;
       return {
         state: applyKlingonKills(nextState, 1),

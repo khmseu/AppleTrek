@@ -3,6 +3,7 @@ import {
   createCommandSession,
   dispatchControl,
   dispatchPrompt,
+  isControlAction,
   type CommandSession,
   type ControlCommandInput
 } from "./commandDispatcher";
@@ -224,23 +225,44 @@ export function mountBrowserTerminal(app: HTMLElement): void {
 
   app.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
-      const action = button.dataset.action as ControlCommandInput["action"] | undefined;
+      const action = button.dataset.action;
       if (!action) {
         return;
       }
 
-      const control: ControlCommandInput = {
-        action,
-        course: numberFromInput(courseInput),
-        value: numberFromInput(valueInput)
-      };
-
-      if (action === "shields") {
-        control.value = numberFromInput(shieldsInput);
+      if (!isControlAction(action)) {
+        session = appendError(session, `Unknown control action: ${action}`);
+        render();
+        return;
       }
 
-      if (action === "phasers") {
-        control.value = numberFromInput(phasersInput);
+      let control: ControlCommandInput;
+
+      if (action === "ion" || action === "warp") {
+        control = {
+          action,
+          course: numberFromInput(courseInput),
+          value: numberFromInput(valueInput)
+        };
+      } else if (action === "torpedo") {
+        control = {
+          action,
+          course: numberFromInput(courseInput)
+        };
+      } else if (action === "shields") {
+        control = {
+          action,
+          value: numberFromInput(shieldsInput)
+        };
+      } else if (action === "phasers") {
+        control = {
+          action,
+          value: numberFromInput(phasersInput)
+        };
+      } else {
+        control = {
+          action: "self-destruct"
+        };
       }
 
       try {

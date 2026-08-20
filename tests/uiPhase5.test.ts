@@ -6,10 +6,14 @@ import { enemyTurn, firePhasers, fireTorpedo } from "../src/state";
 import { createInitialGameState, coordToIndex1Based, type GameState } from "../src/state/gameState";
 import { navigate } from "../src/state/navigation";
 import {
+  CONTROL_ACTIONS,
   mountBrowserTerminal,
   createCommandSession,
+  controlToPrompt,
   dispatchControl,
   dispatchPrompt,
+  formatParsedCommand,
+  isControlAction,
   parsePrompt,
   renderOutputLog,
   renderSectorPanel,
@@ -48,6 +52,23 @@ function makeState(overrides?: Partial<GameState>): GameState {
 }
 
 describe("Phase 5 prompt parsing", () => {
+  it("formats parsed commands as exact prompt/log strings", () => {
+    expect(formatParsedCommand({ kind: "ion", course: 90, value: 3 })).toBe("ION 90 3");
+    expect(formatParsedCommand({ kind: "warp", course: 270, value: 2 })).toBe("WARP 270 2");
+    expect(formatParsedCommand({ kind: "shields", value: 35 })).toBe("SHIELDS 35");
+    expect(formatParsedCommand({ kind: "phasers", value: 1200 })).toBe("PHASERS 1200");
+    expect(formatParsedCommand({ kind: "torpedo", course: 180 })).toBe("TORPEDO 180");
+    expect(formatParsedCommand({ kind: "self-destruct" })).toBe("DESTRUCT");
+  });
+
+  it("formats zero-value command arguments exactly", () => {
+    expect(formatParsedCommand({ kind: "ion", course: 0, value: 0 })).toBe("ION 0 0");
+    expect(formatParsedCommand({ kind: "warp", course: 0, value: 0 })).toBe("WARP 0 0");
+    expect(formatParsedCommand({ kind: "shields", value: 0 })).toBe("SHIELDS 0");
+    expect(formatParsedCommand({ kind: "phasers", value: 0 })).toBe("PHASERS 0");
+    expect(formatParsedCommand({ kind: "torpedo", course: 0 })).toBe("TORPEDO 0");
+  });
+
   it("parses representative command forms", () => {
     expect(parsePrompt("ION 90 3")).toEqual({ kind: "ion", course: 90, value: 3 });
     expect(parsePrompt("warp 270 2")).toEqual({ kind: "warp", course: 270, value: 2 });
@@ -57,49 +78,56 @@ describe("Phase 5 prompt parsing", () => {
   });
 
   it("rejects unknown commands", () => {
-    expect(() => parsePrompt("JUMP 10 10")).toThrow("Unknown command");
+    expect(() => parsePrompt("JUMP 10 10")).toThrow(RangeError);
+    expect(() => parsePrompt("JUMP 10 10")).toThrow(/Unknown command/);
   });
 
   it("rejects empty command input", () => {
-    expect(() => parsePrompt("   \t\n ")).toThrow("Empty command");
+    expect(() => parsePrompt("   \t\n ")).toThrow(RangeError);
+    expect(() => parsePrompt("   \t\n ")).toThrow(/Empty command/);
   });
 
   it("rejects arity mismatch", () => {
-    expect(() => parsePrompt("ION 90")).toThrow("Expected 2 arguments for ION");
+    expect(() => parsePrompt("ION 90")).toThrow(RangeError);
+    expect(() => parsePrompt("ION 90")).toThrow(/Expected 2 arguments for ION/);
   });
 
   it("rejects non-integer arguments", () => {
-    expect(() => parsePrompt("WARP 90.5 2")).toThrow("Invalid course: 90.5");
+    expect(() => parsePrompt("WARP 90.5 2")).toThrow(RangeError);
+    expect(() => parsePrompt("WARP 90.5 2")).toThrow(/Invalid course/);
   });
 
   it("rejects unknown command with deterministic message", () => {
-    expect(() => parsePrompt("JUMP 4 2")).toThrow("Unknown command: JUMP");
+    expect(() => parsePrompt("JUMP 4 2")).toThrow(RangeError);
+    expect(() => parsePrompt("JUMP 4 2")).toThrow(/Unknown command: JUMP/);
   });
 });
 
 describe("Phase 5 dispatcher error paths", () => {
   it("throws for empty prompt", () => {
     const session = createCommandSession(makeState());
-    expect(() => dispatchPrompt(session, "   ", new SeededRng(1))).toThrow("Empty command");
+    expect(() => dispatchPrompt(session, "   ", new SeededRng(1))).toThrow(RangeError);
+    expect(() => dispatchPrompt(session, "   ", new SeededRng(1))).toThrow(/Empty command/);
   });
 
   it("throws for arity mismatch", () => {
     const session = createCommandSession(makeState());
+    expect(() => dispatchPrompt(session, "SHIELDS 10 20", new SeededRng(1))).toThrow(RangeError);
     expect(() => dispatchPrompt(session, "SHIELDS 10 20", new SeededRng(1))).toThrow(
-      "Expected 1 arguments for SHIELDS"
+      /Expected 1 arguments for SHIELDS/
     );
   });
 
   it("throws for non-integer args", () => {
     const session = createCommandSession(makeState());
-    expect(() => dispatchPrompt(session, "TORPEDO 3.14", new SeededRng(1))).toThrow(
-      "Invalid course: 3.14"
-    );
+    expect(() => dispatchPrompt(session, "TORPEDO 3.14", new SeededRng(1))).toThrow(RangeError);
+    expect(() => dispatchPrompt(session, "TORPEDO 3.14", new SeededRng(1))).toThrow(/Invalid course/);
   });
 
   it("throws for unknown command", () => {
     const session = createCommandSession(makeState());
-    expect(() => dispatchPrompt(session, "LASER 100", new SeededRng(1))).toThrow("Unknown command: LASER");
+    expect(() => dispatchPrompt(session, "LASER 100", new SeededRng(1))).toThrow(RangeError);
+    expect(() => dispatchPrompt(session, "LASER 100", new SeededRng(1))).toThrow(/Unknown command: LASER/);
   });
 });
 
@@ -288,6 +316,46 @@ describe("Phase 5 retro panel rendering", () => {
 });
 
 describe("Phase 5 clickable control parity", () => {
+  it("exports stable control actions and validates them via helper", () => {
+    expect(CONTROL_ACTIONS).toHaveLength(6);
+    expect(CONTROL_ACTIONS).toEqual(
+      expect.arrayContaining(["ion", "warp", "shields", "phasers", "torpedo", "self-destruct"])
+    );
+    expect(Object.isFrozen(CONTROL_ACTIONS)).toBe(true);
+
+    for (const action of CONTROL_ACTIONS) {
+      expect(isControlAction(action)).toBe(true);
+    }
+
+    expect(isControlAction("ION")).toBe(false);
+    expect(isControlAction("laser")).toBe(false);
+    expect(isControlAction("")).toBe(false);
+  });
+
+  it("throws when required control fields are missing", () => {
+    expect(() =>
+      controlToPrompt({ action: "ion", value: 2 } as unknown as Parameters<typeof controlToPrompt>[0])
+    ).toThrow(/Missing course/);
+    expect(() =>
+      controlToPrompt({ action: "warp", course: 90 } as unknown as Parameters<typeof controlToPrompt>[0])
+    ).toThrow(/Missing value/);
+    expect(() =>
+      controlToPrompt({ action: "torpedo" } as unknown as Parameters<typeof controlToPrompt>[0])
+    ).toThrow(/Missing course/);
+    expect(() =>
+      controlToPrompt({ action: "shields" } as unknown as Parameters<typeof controlToPrompt>[0])
+    ).toThrow(/Missing value/);
+    expect(() =>
+      controlToPrompt({ action: "phasers" } as unknown as Parameters<typeof controlToPrompt>[0])
+    ).toThrow(/Missing value/);
+  });
+
+  it("throws when control fields are invalid", () => {
+    expect(() => controlToPrompt({ action: "ion", course: 90.5, value: 2 })).toThrow(/Invalid course/);
+    expect(() => controlToPrompt({ action: "warp", course: 90, value: 2.1 })).toThrow(/Invalid value/);
+    expect(() => controlToPrompt({ action: "torpedo", course: 3.14 })).toThrow(/Invalid course/);
+  });
+
   it("dispatches button controls through the same command execution path", () => {
     const start = makeState({
       ship: {
