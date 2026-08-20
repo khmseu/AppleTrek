@@ -171,7 +171,7 @@ export function callNoop(address: number): void {
 /**
  * Deterministic Apple Integer BASIC random number generator.
  *
- * The 6502 RND routine at `apple.intbasic.rnd.6502:$EF4E` updates a 16-bit
+ * The 6502 RND routine at `original-sources/apple.intbasic.rnd.6502:$EF4E` updates a 16-bit
  * state with 17 byte-level rotate/shift rounds, then reduces that state by
  * the requested range. All gameplay randomness flows through this class so
  * tests and scripted replays remain reproducible.

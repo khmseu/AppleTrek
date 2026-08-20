@@ -144,6 +144,6 @@ vite.config.ts.timestamp-*
 .vite/
 
 # Local
-/apple_trek.dsk
-/apple_trek.dsk.gz
+/original-sources/apple_trek.dsk
+/original-sources/apple_trek.dsk.gz
 /plans/

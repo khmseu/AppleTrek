@@ -4,8 +4,8 @@
 
 **Apple Trek** is a browser-based TypeScript port of the classic Apple Integer BASIC game from the Apple II era. The goal is to recreate the original Trek spaceship exploration and combat game as a fully client-side web app, prioritizing gameplay parity with the original while providing a retro terminal UI and optional modern visual layer.
 
-**Original Source:** [apple_trek.bas](apple_trek.bas) — Reference Apple Integer BASIC source code
-**Reference Binary:** [apple_trek.dsk](apple_trek.dsk) — Apple II disk image of the original game
+**Original Source:** [original-sources/apple_trek.bas](original-sources/apple_trek.bas) — Reference Apple Integer BASIC source code
+**Reference Binary:** [original-sources/apple_trek.dsk](original-sources/apple_trek.dsk) — Apple II disk image of the original game
 
 ---
 
@@ -34,8 +34,7 @@ npm run preview   # Preview built output
 ## Project Structure
 
 ```
-apple_trek.bas          # Original Apple Integer BASIC source (reference)
-apple_trek.dsk          # Apple II binary (reference)
+original-sources/       # Original Apple II source files and reference artifacts
 index.html              # HTML5 entry point (loads src/main.ts)
 src/
   ├── main.ts           # App entry point (currently renders scaffold)
@@ -138,7 +137,7 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
 - Write tests before implementing
 - Use `SeededRng` for all randomness
 - Preserve Apple Integer BASIC semantics (1/0 relational booleans, signed 16-bit bitwise logic, integer-only arithmetic)
-- Check against `apple_trek.bas` for original logic
+- Check against `original-sources/apple_trek.bas` for original logic
 - Validate determinism with fixed seeds in tests
 - Run full test suite before committing
 
@@ -155,27 +154,27 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
 
 | File | Purpose | Key Notes |
 |------|---------|-----------|
+| [index.html](index.html) | HTML entry point | #app div, loads src/main.ts |
+| [original-sources/apple_trek.bas](original-sources/apple_trek.bas) | BASIC source reference | Consult for game logic, commands, AI |
+| [original-sources/apple_trek.dsk](original-sources/apple_trek.dsk) | Original binary | Run on Apple II emulator to validate parity |
 | [package.json](package.json) | Project metadata & scripts | Defines build/test/dev/preview tasks |
+| [plans/*.md](plans/) | Development roadmap | Phase objectives, test requirements, steps |
+| [src/compat/basicCompat.ts](src/compat/basicCompat.ts) | BASIC compatibility | Phase 1: compat primitives + SeededRng |
+| [src/main.ts](src/main.ts) | App entry | Currently renders scaffold; will wire game loop |
+| [tests/compat.test.ts](tests/compat.test.ts) | Compat layer tests | Determinism, bounds, edge cases |
 | [tsconfig.json](tsconfig.json) | TypeScript config | Strict mode, ES2020 target, Vitest globals |
 | [vite.config.ts](vite.config.ts) | Vite & Vitest config | Node environment for tests |
-| [index.html](index.html) | HTML entry point | #app div, loads src/main.ts |
-| [src/main.ts](src/main.ts) | App entry | Currently renders scaffold; will wire game loop |
-| [src/compat/basicCompat.ts](src/compat/basicCompat.ts) | BASIC compatibility | Phase 1: compat primitives + SeededRng |
-| [tests/compat.test.ts](tests/compat.test.ts) | Compat layer tests | Determinism, bounds, edge cases |
-| [apple_trek.bas](apple_trek.bas) | BASIC source reference | Consult for game logic, commands, AI |
-| [apple_trek.dsk](apple_trek.dsk) | Original binary | Run on Apple II emulator to validate parity |
-| [plans/*.md](plans/) | Development roadmap | Phase objectives, test requirements, steps |
 
 ---
 
 ## Next Steps for AI Agents
 
 ### Phase 2 (Game State Model and Initialization)
-- Read [apple_trek.bas](apple_trek.bas) to extract game state fields (ship, crew, energy, quadrant layout, etc.)
+- Read [original-sources/apple_trek.bas](original-sources/apple_trek.bas) to extract game state fields (ship, crew, energy, quadrant layout, etc.)
 - Create typed `GameState` interface in `src/state/` (new folder)
 - Implement deterministic initialization with fixed seed
 - Write failing tests for state invariants and startup parity
-- Validate with reference [apple_trek.dsk](apple_trek.dsk)
+- Validate with reference [original-sources/apple_trek.dsk](original-sources/apple_trek.dsk)
 
 ### For Feature Implementation
 1. Check [plans/apple-trek-browser-typescript-plan.md](plans/apple-trek-browser-typescript-plan.md) for the current phase
@@ -184,7 +183,7 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
 4. Run `npm run test` and `npm run build` before committing
 
 ### For Questions or Ambiguities
-- Refer to [apple_trek.bas](apple_trek.bas) as the source of truth for game logic
+- Refer to [original-sources/apple_trek.bas](original-sources/apple_trek.bas) as the source of truth for game logic
 - Check the phase plan for explicit test and step guidance
 - Preserve Apple Integer BASIC semantics unless the plan explicitly says otherwise
 
@@ -194,7 +193,7 @@ Apple Integer BASIC compatibility primitives that preserve BASIC semantics:
 
 - **Master Plan:** [plans/apple-trek-browser-typescript-plan.md](plans/apple-trek-browser-typescript-plan.md) — Full 6-phase roadmap with objectives and test requirements
 - **Phase 1 Completion:** [plans/apple-trek-browser-typescript-phase-1-complete.md](plans/apple-trek-browser-typescript-phase-1-complete.md) — What was delivered and approved
-- **Original Game:** [apple_trek.bas](apple_trek.bas) — Reference for commands, game state, and logic
+- **Original Game:** [original-sources/apple_trek.bas](original-sources/apple_trek.bas) — Reference for commands, game state, and logic
 - **Vitest Docs:** https://vitest.dev/ — Test framework and API
 - **Vite Docs:** https://vitejs.dev/ — Build tool configuration
 
