@@ -1,7 +1,9 @@
 import { type EndgameReason, type GameState } from "./gameState";
 
+/** Overall mission result shown to the player once play reaches a terminal state. */
 export type MissionOutcome = "success" | "failure";
 
+/** Player-facing endgame bulletin derived from the terminal reason and state. */
 export interface MissionOutcomeBulletin {
   outcome: MissionOutcome;
   reason: Exclude<EndgameReason, "ongoing">;
@@ -71,6 +73,13 @@ function reasonSummary(reason: Exclude<EndgameReason, "ongoing">): string {
   return "Command sequence initiated and vessel was destroyed by crew order.";
 }
 
+/**
+ * Evaluates the current state for mission completion or failure.
+ *
+ * Success is granted only when all Klingons are eliminated. Explicit
+ * self-destruct has priority over other failure reasons, followed by victory,
+ * ship destruction, and deadline expiry.
+ */
 export function evaluateMissionOutcome(state: GameState): MissionOutcomeBulletin | null {
   const reason = resolveReason(state);
   if (!reason) {
@@ -90,6 +99,7 @@ export function evaluateMissionOutcome(state: GameState): MissionOutcomeBulletin
   };
 }
 
+/** Marks the state as self-destructed and drains all defensive ship resources. */
 export function triggerSelfDestruct(state: GameState): GameState {
   return {
     ...state,

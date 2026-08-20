@@ -7,14 +7,19 @@ import {
 import { EMPTY_CELL, STARBASE_CELL, STAR_CELL, isKlingonCell } from "./cells";
 import { courseToVector } from "./navigation";
 
+/** Result of a phaser volley, including the updated state and kill count. */
 export interface PhaserResult {
   state: GameState;
+  /** Number of Klingons destroyed by this volley. */
   kills: number;
 }
 
+/** Result of a torpedo shot and the first obstacle or target it encountered. */
 export interface TorpedoResult {
   state: GameState;
+  /** True only when the torpedo destroys a Klingon. */
   hit: boolean;
+  /** Collision outcome, or `miss` when the torpedo leaves the sector. */
   reason: "klingon" | "star" | "starbase" | "miss";
 }
 
@@ -80,6 +85,15 @@ function distanceBetween(a: number, b: number, gridSize: number): number {
   return Math.max(1, Math.abs(aa.row - bb.row) + Math.abs(aa.col - bb.col));
 }
 
+/**
+ * Fires phasers by splitting spent energy across all visible Klingons.
+ *
+ * Damage falls off with Manhattan distance and includes deterministic variance
+ * from the supplied RNG. Destroyed Klingons are removed from the sector, global
+ * counts are decremented, and the current quadrant encoding is updated.
+ *
+ * @throws {RangeError} When energy is invalid or exceeds current ship energy.
+ */
 export function firePhasers(state: GameState, energyToSpend: number, rng: SeededRng): PhaserResult {
   if (!Number.isInteger(energyToSpend) || energyToSpend <= 0) {
     throw new RangeError(`Invalid phaser energy: ${energyToSpend}`);
@@ -127,6 +141,15 @@ export function firePhasers(state: GameState, energyToSpend: number, rng: Seeded
   };
 }
 
+/**
+ * Fires one torpedo along an approximated course vector until it hits or exits.
+ *
+ * The torpedo decrements ammunition before travel. Klingons are destroyed,
+ * stars block the shot, starbases are removed and decremented, and misses occur
+ * when the projectile leaves the current sector bounds.
+ *
+ * @throws {RangeError} When no torpedoes remain.
+ */
 export function fireTorpedo(state: GameState, course: number): TorpedoResult {
   if (state.ship.torpedoes <= 0) {
     throw new RangeError("No torpedoes remaining");
@@ -204,6 +227,12 @@ export function fireTorpedo(state: GameState, course: number): TorpedoResult {
   return { state: nextState, hit: false, reason: "miss" };
 }
 
+/**
+ * Runs deterministic enemy movement and fire for all Klingons in the current sector.
+ *
+ * Each Klingon may move to an adjacent empty cell and then fires at the ship.
+ * Shield damage is applied first; overflow drains ship energy.
+ */
 export function enemyTurn(state: GameState, rng: SeededRng): GameState {
   const sector = [...state.sector];
   const shipIndex = state.position.sectorIndex;

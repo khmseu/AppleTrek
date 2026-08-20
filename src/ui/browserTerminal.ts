@@ -21,6 +21,15 @@ function numberFromInput(input: HTMLInputElement): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+/**
+ * Mounts the complete browser terminal UI into an existing application element.
+ *
+ * The terminal owns a deterministic command session and shared RNG, renders the
+ * status/sector/log panels, and routes both prompt submissions and quick-control
+ * buttons through the same dispatcher path used by tests and scripted replays.
+ *
+ * @throws {Error} When expected DOM nodes cannot be found after template setup.
+ */
 export function mountBrowserTerminal(app: HTMLElement): void {
   const rng = new SeededRng(1701);
   let session = createCommandSession();

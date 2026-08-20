@@ -7,9 +7,13 @@ import {
   STAR_CELL
 } from "./cells";
 
+/** Default Apple Trek sector width/height. Variable-size states may override this. */
 export const SECTOR_GRID_SIZE = 8;
+/** Number of cells in the default Apple Trek sector grid. */
 export const TOTAL_SECTOR_GRID_CELLS = SECTOR_GRID_SIZE * SECTOR_GRID_SIZE;
+/** Default Apple Trek quadrant grid width/height. Variable-size states may override this. */
 export const QUADRANT_GRID_SIZE = 8;
+/** Number of cells in the default Apple Trek galaxy quadrant grid. */
 export const TOTAL_QUADRANT_GRID_CELLS = QUADRANT_GRID_SIZE * QUADRANT_GRID_SIZE;
 
 const START_STARDATE = 3424;
@@ -18,21 +22,27 @@ const MAX_ENERGY = 5000;
 const START_SHIELD_PERCENT = 50;
 const MAX_TORPEDOES = 10;
 
+/** 1-based row/column coordinate used for both sectors and quadrants. */
 export interface GridCoord1Based {
+  /** Row in the inclusive range 1..gridSize. */
   row: number;
+  /** Column in the inclusive range 1..gridSize. */
   col: number;
 }
 
+/** Mission start/end dates expressed as integer stardates. */
 export interface MissionState {
   startStardate: number;
   endStardate: number;
 }
 
+/** Current stardate plus sub-day ticks. One hundred ticks advance one stardate. */
 export interface ClockState {
   stardate: number;
   ticks: number;
 }
 
+/** Mutable ship resources and shield target state. */
 export interface ShipState {
   energy: number;
   energyMax: number;
@@ -42,6 +52,7 @@ export interface ShipState {
   torpedoesMax: number;
 }
 
+/** Initial and remaining mission entity counts. */
 export interface EnemyAndBaseCounts {
   initialKlingons: number;
   klingonsRemaining: number;
@@ -49,13 +60,17 @@ export interface EnemyAndBaseCounts {
   basesRemaining: number;
 }
 
+/** Current ship location in both galaxy quadrant space and local sector space. */
 export interface PositionState {
+  /** 1-based index into `GameState.galaxy`, using `GameState.quadrantSize`. */
   quadrantIndex: number;
   quadrant: GridCoord1Based;
+  /** 1-based index into `GameState.sector`, using `GameState.sectorSize`. */
   sectorIndex: number;
   sector: GridCoord1Based;
 }
 
+/** Terminal mission state reason, or `ongoing` while play may continue. */
 export type EndgameReason =
   | "ongoing"
   | "klingons-eliminated"
@@ -63,11 +78,21 @@ export type EndgameReason =
   | "ship-destroyed"
   | "self-destruct";
 
+/** Endgame flag and reason evaluated by mission outcome logic. */
 export interface EndgameState {
   terminal: boolean;
   reason: EndgameReason;
 }
 
+/**
+ * Complete immutable-style game snapshot consumed by state transition functions.
+ *
+ * Arrays use 1-based indexes in the stored position fields but remain normal
+ * zero-based JavaScript arrays at the storage level. `sectorSize` and
+ * `quadrantSize` describe the active dimensions for variable-size test states;
+ * callers should prefer those fields over default constants whenever a
+ * `GameState` is available.
+ */
 export interface GameState {
   sectorSize: number;
   quadrantSize: number;
@@ -113,6 +138,11 @@ function placeRandomOnEmptyCells(cells: number[], count: number, value: number, 
   }
 }
 
+/**
+ * Converts a 1-based row/column pair to a 1-based linear index for any square grid.
+ *
+ * @throws {RangeError} When row or column is not an integer in 1..gridSize.
+ */
 export function coordToIndex1Based(row: number, col: number, gridSize: number): number {
   assertGridRange(row, gridSize, "row");
   assertGridRange(col, gridSize, "col");
@@ -120,6 +150,11 @@ export function coordToIndex1Based(row: number, col: number, gridSize: number): 
   return (row - 1) * gridSize + col;
 }
 
+/**
+ * Converts a 1-based linear index to a 1-based row/column pair for any square grid.
+ *
+ * @throws {RangeError} When index is not an integer in 1..gridSize^2.
+ */
 export function indexToCoord1Based(index: number, gridSize: number): GridCoord1Based {
   assertGridRange(index, gridSize * gridSize, "index");
 
@@ -129,22 +164,34 @@ export function indexToCoord1Based(index: number, gridSize: number): GridCoord1B
   return { row, col };
 }
 
+/** Converts coordinates using the default 8x8 sector size, not a state's sector size. */
 export function coordToDefaultSectorIndex1Based(row: number, col: number): number {
   return coordToIndex1Based(row, col, SECTOR_GRID_SIZE);
 }
 
+/** Converts coordinates using the default 8x8 quadrant size, not a state's quadrant size. */
 export function coordToDefaultQuadrantIndex1Based(row: number, col: number): number {
   return coordToIndex1Based(row, col, QUADRANT_GRID_SIZE);
 }
 
+/** Converts an index using the default 8x8 sector size, not a state's sector size. */
 export function indexToDefaultSectorCoord1Based(index: number): GridCoord1Based {
   return indexToCoord1Based(index, SECTOR_GRID_SIZE);
 }
 
+/** Converts an index using the default 8x8 quadrant size, not a state's quadrant size. */
 export function indexToDefaultQuadrantCoord1Based(index: number): GridCoord1Based {
   return indexToCoord1Based(index, QUADRANT_GRID_SIZE);
 }
 
+/**
+ * Creates a deterministic default-size Apple Trek game state from a seed.
+ *
+ * The returned galaxy and current sector are populated from the original BASIC
+ * encoding scheme: hundreds are Klingons, tens are starbases, and ones are
+ * stars. The selected starting quadrant is marked explored by storing a
+ * positive encoded value.
+ */
 export function createInitialGameState(seed: number): GameState {
   const rng = new SeededRng(seed);
 

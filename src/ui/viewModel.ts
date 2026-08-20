@@ -1,5 +1,11 @@
 import { type GameState } from "../state/gameState";
 
+/**
+ * Read-only projection for optional modern overlays outside the retro terminal.
+ *
+ * The view model mirrors player-facing state only and intentionally omits raw
+ * galaxy/sector arrays so UI layers do not mutate engine state accidentally.
+ */
 export interface OverlayViewModel {
   stardate: {
     major: number;
@@ -48,6 +54,7 @@ function deepFreeze<T extends object>(value: T): Readonly<T> {
   return value;
 }
 
+/** Builds and deeply freezes a UI-friendly projection of the current game state. */
 export function createOverlayViewModel(state: GameState): Readonly<OverlayViewModel> {
   const model: OverlayViewModel = {
     stardate: {

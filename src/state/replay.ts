@@ -2,10 +2,15 @@ import { SeededRng } from "../compat/basicCompat";
 import { createInitialGameState, type GameState } from "./gameState";
 import { createCommandSession, dispatchPrompt } from "../ui/commandDispatcher";
 
+/** Deterministic replay output for a seed and command script. */
 export interface ReplayResult {
+  /** Final state after every command has been dispatched. */
   finalState: GameState;
+  /** Command log collected by the command session. */
   log: string[];
+  /** Stable JSON snapshot used as checksum input. */
   snapshot: string;
+  /** FNV-1a checksum of the replay snapshot, formatted as eight hex characters. */
   checksum: string;
 }
 
@@ -25,6 +30,12 @@ function computeChecksumFnv1a(input: string): string {
   return hash.toString(16).padStart(8, "0");
 }
 
+/**
+ * Runs prompt commands against a deterministic initial state and RNG stream.
+ *
+ * The replay uses the same dispatcher as the browser UI so prompt parsing,
+ * command side effects, enemy turns, and logging are all covered by the snapshot.
+ */
 export function runScriptedReplay(seed: number, commands: string[]): ReplayResult {
   const rng = new SeededRng(seed);
   let session = createCommandSession(createInitialGameState(seed));

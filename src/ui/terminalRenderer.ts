@@ -9,6 +9,7 @@ function formatTickClock(stardate: number, ticks: number): string {
   return `${stardate}.${pad(ticks)}`;
 }
 
+/** Renders the compact status panel shown beside the sector grid. */
 export function renderStatusPanel(state: GameState): string {
   const lines = [
     "STATUS",
@@ -25,6 +26,15 @@ export function renderStatusPanel(state: GameState): string {
   return lines.join("\n");
 }
 
+/**
+ * Renders the current sector as a text grid with dynamic column headers.
+ *
+ * The renderer uses `state.sectorSize` rather than default constants and checks
+ * that the backing sector array has exactly `sectorSize^2` cells before reading
+ * it, preventing misleading output for malformed variable-size states.
+ *
+ * @throws {RangeError} When sector length does not match `sectorSize^2`.
+ */
 export function renderSectorPanel(state: GameState): string {
   const expectedCellCount = state.sectorSize * state.sectorSize;
   if (state.sector.length !== expectedCellCount) {
@@ -49,6 +59,7 @@ export function renderSectorPanel(state: GameState): string {
   return lines.join("\n");
 }
 
+/** Renders the command log header plus the last ten log lines. */
 export function renderOutputLog(log: string[]): string {
   return ["LOG", ...log.slice(-10)].join("\n");
 }

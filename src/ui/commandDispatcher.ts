@@ -6,11 +6,13 @@ import { navigate, setShieldsPercent } from "../state/navigation";
 import { assertNever } from "../utils/assertNever";
 import { formatParsedCommand, parsePrompt, type ParsedCommand } from "./commandParser";
 
+/** Mutable command-session wrapper used by prompt and clickable controls. */
 export interface CommandSession {
   state: GameState;
   log: string[];
 }
 
+/** Stable list of supported clickable control actions. */
 export const CONTROL_ACTIONS = Object.freeze([
   "ion",
   "warp",
@@ -22,12 +24,15 @@ export const CONTROL_ACTIONS = Object.freeze([
 
 const CONTROL_ACTION_SET: ReadonlySet<string> = new Set(CONTROL_ACTIONS);
 
+/** Union of action names accepted by clickable control dispatch. */
 export type ControlAction = (typeof CONTROL_ACTIONS)[number];
 
+/** Runtime guard for validating string values before treating them as control actions. */
 export function isControlAction(value: string): value is ControlAction {
   return CONTROL_ACTION_SET.has(value);
 }
 
+/** Discriminated input accepted by clickable controls before conversion to prompt text. */
 export type ControlCommandInput =
   | { action: "ion"; course: number; value: number }
   | { action: "warp"; course: number; value: number }
@@ -120,6 +125,7 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   return enemyTurn(result.state, rng);
 }
 
+/** Creates a new command session with an optional starting state and welcome log. */
 export function createCommandSession(initialState?: GameState): CommandSession {
   return {
     state: initialState ?? createInitialGameState(1701),
@@ -127,6 +133,7 @@ export function createCommandSession(initialState?: GameState): CommandSession {
   };
 }
 
+/** Executes an already parsed command and appends its canonical form to the log. */
 export function dispatchParsed(session: CommandSession, command: ParsedCommand, rng: SeededRng): CommandSession {
   const nextState = executeParsed(session.state, command, rng);
   const nextLog = appendLog(session.log, `> ${formatParsedCommand(command)}`);
@@ -136,15 +143,18 @@ export function dispatchParsed(session: CommandSession, command: ParsedCommand, 
   };
 }
 
+/** Parses and executes a prompt command through the shared command path. */
 export function dispatchPrompt(session: CommandSession, prompt: string, rng: SeededRng): CommandSession {
   const parsed = parsePrompt(prompt);
   return dispatchParsed(session, parsed, rng);
 }
 
+/** Converts clickable control input to the exact prompt text used by command logs. */
 export function controlToPrompt(input: ControlCommandInput): string {
   return formatParsedCommand(controlToParsed(input));
 }
 
+/** Executes clickable control input by routing through the same prompt dispatcher path. */
 export function dispatchControl(
   session: CommandSession,
   control: ControlCommandInput,

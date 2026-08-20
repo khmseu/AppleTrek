@@ -11,11 +11,13 @@ import {
   STAR_CELL
 } from "./cells";
 
+/** Movement vector scaled so accumulated magnitudes of 1000 cross one cell. */
 export interface CourseVector {
   dx: number;
   dy: number;
 }
 
+/** Parsed navigation command arguments. */
 export interface NavigateInput {
   mode: "ion" | "warp";
   course: number;
@@ -82,6 +84,13 @@ function courseComponent(c2: number): number {
   return (c3 + 5) / 10;
 }
 
+/**
+ * Converts a compass course in degrees into the original game's movement vector.
+ *
+ * Courses are normalized into 0..359, including negative inputs. The resulting
+ * vector intentionally preserves the Applesoft approximation rather than using
+ * trigonometric unit vectors.
+ */
 export function courseToVector(course: number): CourseVector {
   const normalized = normalizeCourse(course);
   const c1 = truncDiv(normalized, 90);
@@ -106,6 +115,15 @@ export function courseToVector(course: number): CourseVector {
   return { dx, dy };
 }
 
+/**
+ * Moves the ship through sector space and wraps through quadrants as needed.
+ *
+ * This function uses `state.sectorSize` and `state.quadrantSize`, validates that
+ * the galaxy backing array matches `quadrantSize^2`, and rebuilds the local
+ * sector when movement crosses into a different quadrant.
+ *
+ * @throws {RangeError} When `steps` is invalid or the galaxy shape is inconsistent.
+ */
 export function stepMovement(state: GameState, vector: CourseVector, steps: number): GameState {
   if (!Number.isInteger(steps) || steps < 0) {
     throw new RangeError(`Invalid movement steps: ${steps}`);
@@ -190,6 +208,14 @@ export function stepMovement(state: GameState, vector: CourseVector, steps: numb
   };
 }
 
+/**
+ * Advances mission time and applies per-tick ship energy recharge and shield drift.
+ *
+ * Shield energy gradually approaches the configured shield percentage target and
+ * is clamped to the current available ship energy.
+ *
+ * @throws {RangeError} When `ticks` is negative or not an integer.
+ */
 export function advanceTime(state: GameState, ticks: number): GameState {
   if (!Number.isInteger(ticks) || ticks < 0) {
     throw new RangeError(`Invalid ticks: ${ticks}`);
@@ -228,6 +254,11 @@ export function advanceTime(state: GameState, ticks: number): GameState {
   };
 }
 
+/**
+ * Sets the target shield percentage and immediately recalculates shield energy.
+ *
+ * @throws {RangeError} When `targetPercent` is outside the inclusive range 0..100.
+ */
 export function setShieldsPercent(state: GameState, targetPercent: number): GameState {
   if (!Number.isInteger(targetPercent) || targetPercent < 0 || targetPercent > 100) {
     throw new RangeError(`Invalid shield percent: ${targetPercent}`);
@@ -248,6 +279,15 @@ export function setShieldsPercent(state: GameState, targetPercent: number): Game
   };
 }
 
+/**
+ * Applies a complete ion or warp navigation command.
+ *
+ * The command validates inputs, charges the mode-specific energy cost, moves the
+ * ship, and advances time. Warp currently moves the requested distance but costs
+ * cubic energy and advances a fixed ten ticks.
+ *
+ * @throws {RangeError} When inputs are invalid or energy is insufficient.
+ */
 export function navigate(state: GameState, input: NavigateInput): GameState {
   if (!Number.isFinite(input.course)) {
     throw new RangeError(`Invalid navigation course: ${input.course}`);

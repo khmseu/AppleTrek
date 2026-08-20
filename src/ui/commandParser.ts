@@ -1,5 +1,6 @@
 import { assertNever } from "../utils/assertNever";
 
+/** Prompt command variants accepted by the command dispatcher. */
 export type ParsedCommand =
   | { kind: "ion"; course: number; value: number }
   | { kind: "warp"; course: number; value: number }
@@ -8,6 +9,7 @@ export type ParsedCommand =
   | { kind: "torpedo"; course: number }
   | { kind: "self-destruct" };
 
+/** Formats a parsed command into the canonical uppercase log/prompt form. */
 export function formatParsedCommand(command: ParsedCommand): string {
   switch (command.kind) {
     case "ion":
@@ -41,6 +43,15 @@ function expectArity(parts: string[], arity: number, command: string): void {
   }
 }
 
+/**
+ * Parses a terminal prompt command into a typed command object.
+ *
+ * Supported command names include short aliases such as `I`, `W`, `PH`, `T`, and
+ * `SD`. Numeric arguments must be integers; range validation is performed by
+ * the state transition functions that execute the command.
+ *
+ * @throws {RangeError} For empty input, unknown commands, arity mismatch, or non-integer arguments.
+ */
 export function parsePrompt(input: string): ParsedCommand {
   const parts = input
     .trim()
