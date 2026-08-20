@@ -2,7 +2,9 @@ import {
   APPLE_II_MEMORY,
   APPLE_II_MACHINE,
   APPLE_II_ROM_CALLS,
-  SeededRng
+  SeededRng,
+  setWindow,
+  tabHV
 } from "../compat/basicCompat";
 import {
   createCommandSession,
@@ -37,7 +39,11 @@ function numberFromInput(input: HTMLInputElement): number {
  * @throws {Error} When expected DOM nodes cannot be found after template setup.
  */
 export function mountBrowserTerminal(app: HTMLElement): void {
+  // TEXT
+  setWindow(0, 40, 0, 24);
+  tabHV(1,13);
   APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.HOME);
+
   APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDLFT, 0x00);
   APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDWDTH, 0x28);
 

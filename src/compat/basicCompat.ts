@@ -65,8 +65,9 @@ export function basicNot(value: unknown): number {
 // Source: apple_trek.bas line 110 and compound conditions at lines 160-170 and 1180.
 export function basicAnd(a: unknown, b: unknown): number {
   return toIntegerBasicWord(
-    toIntegerBasicWord(a, "left operand") & toIntegerBasicWord(b, "right operand"),
-    "result"
+    toIntegerBasicWord(a, "left operand") &
+      toIntegerBasicWord(b, "right operand"),
+    "result",
   );
 }
 
@@ -74,41 +75,85 @@ export function basicAnd(a: unknown, b: unknown): number {
 // Source: apple_trek.bas compound conditions at lines 160-170, 1180, and 1845.
 export function basicOr(a: unknown, b: unknown): number {
   return toIntegerBasicWord(
-    toIntegerBasicWord(a, "left operand") | toIntegerBasicWord(b, "right operand"),
-    "result"
+    toIntegerBasicWord(a, "left operand") |
+      toIntegerBasicWord(b, "right operand"),
+    "result",
   );
 }
 
 /** Apple II zero-page and soft-switch addresses touched by the original BASIC source. */
 // Source: apple_trek.bas lines 600-7040, especially 600-690 and 2500-2510.
 export const APPLE_II_MEMORY = Object.freeze({
-  WNDLFT: 0x20,
-  WNDWDTH: 0x21,
-  WNDTOP: 0x22,
-  WNDBTM: 0x23,
-  TEXT_COLOR: 0x32,
-  KBD: 0xc000,
-  KBDSTRB: 0xc010,
-  TXTCLR: 0xc050,
-  MIXCLR: 0xc052,
-  TXTSET: 0xc051,
-  HIRES_PAGE: 0x4000,
-  SPRITE_VECTOR: 0x3fa1,
-  SPRITE_COLOR: 0x3fa2,
-  TONE_LATCH: 0x3fa7,
-  SPRITE_SPEED: 0x3fb0,
-  COURSE_TABLE_BASE: 0x3fbf
+  WNDLFT:              0x20, // 32
+  WNDWDTH:             0x21, // 33
+  WNDTOP:              0x22, // 34
+  WNDBTM:              0x23, // 35
+  CH:                  0x2c, // 44??
+  CV:                  0x2d, // 45??
+  INVERSE:             0x2e, // 46
+  TEXT_COLOR:          0x32, // 50
+
+  SPRITE_VECTOR:     0x3fa1, // 16161 R5 - 223
+  SPRITE_COLOR:      0x3fa2, // 16162 R5 - 222
+  TONE_LATCH:        0x3fa7, // 16167 R5 - 217
+  SPRITE_SPEED:      0x3fb0, // 16176 R5 - 208
+  COURSE_TABLE_BASE: 0x3fbf, // 16191 R5 - 193
+
+  C95:               0x3fa1, // 16289 R5 - 95
+
+  X94:               0x3fa2, // 16290 R5 - 94
+  X89:               0x3fa7, // 16295 R5 - 89
+  X80:               0x3fb0, // 16304 R5 - 80
+  X65:               0x3fbf, // 16319 R5 - 65
+  HIMEM:             0x4000, // 16384 R5
+
+  KBD:               0xc000, // -16384
+  KBDSTRB:           0xc010, // -16368
+  TXTCLR:            0xc050, // -16336
+  TXTSET:            0xc051, // -16335
+  MIXCLR:            0xc052, // -16334
 } as const);
 
 /** Apple II ROM routines called by the original BASIC source. */
 // Source: apple_trek.bas lines 600, 610, 620, 660, 690, 1000-1145, and 7030-7040.
 export const APPLE_II_ROM_CALLS = Object.freeze({
-  SET_INVERSE_TEXT: 0xfe80,
-  SET_NORMAL_TEXT: 0xfe84,
-  CLEAR_TO_EOL: 0xfc9c,
-  HOME: 0xfc58
+  SET_INVERSE_TEXT: 0xfe80, // -128
+  SET_NORMAL_TEXT: 0xfe84, // -124
+  CLEAR_TO_EOL: 0xfc9c, // -900
+  HOME: 0xfc58, // -936
 } as const);
 
+/**
+ * Sets the position and size of the Apple II text window.
+ *
+ * @param left The left coordinate of the window.
+ * @param width The width of the window.
+ * @param top The top coordinate of the window.
+ * @param bottom The height of the window.
+ */
+export function setWindow(
+  left: number,
+  width: number,
+  top: number,
+  bottom: number,
+): void {
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDLFT, left);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDWDTH, width);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDTOP, top);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDBTM, bottom);
+} 
+
+export function tabHV(horizontal: number, vertical: number): void {
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.CH, horizontal);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.CV, vertical);
+}
+
+/**
+ * Converts a potentially negative 16-bit Integer BASIC address to its unsigned equivalent.
+ *
+ * @param address The address to convert to an unsigned 16-bit value.
+ * @returns The unsigned 16-bit representation of the address.
+ */
 function toUnsigned16BitAddress(address: number): number {
   return address & INTEGER_BASIC_WORD_MASK;
 }
@@ -153,7 +198,7 @@ function callNoopImpl(address: number): void {
 export const APPLE_II_MACHINE = {
   peek: peekNoopImpl,
   poke: pokeNoopImpl,
-  call: callNoopImpl
+  call: callNoopImpl,
 };
 
 export function peekNoop(address: number): number {

@@ -65,7 +65,7 @@ describe("Apple II machine interface no-ops", () => {
     expect(APPLE_II_MEMORY.TXTCLR).toBe(0xc050);
     expect(APPLE_II_MEMORY.MIXCLR).toBe(0xc052);
     expect(APPLE_II_MEMORY.TXTSET).toBe(0xc051);
-    expect(APPLE_II_MEMORY.HIRES_PAGE).toBe(0x4000);
+    expect(APPLE_II_MEMORY.HIMEM).toBe(0x4000);
     expect(APPLE_II_MEMORY.SPRITE_VECTOR).toBe(0x3fa1);
     expect(APPLE_II_MEMORY.SPRITE_COLOR).toBe(0x3fa2);
     expect(APPLE_II_MEMORY.TONE_LATCH).toBe(0x3fa7);
