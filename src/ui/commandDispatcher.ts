@@ -1,5 +1,6 @@
 import { SeededRng } from "../compat/basicCompat";
 import { enemyTurn, firePhasers, fireTorpedo } from "../state/combat";
+import { triggerSelfDestruct } from "../state/endgame";
 import { createInitialGameState, type GameState } from "../state/gameState";
 import { navigate, setShieldsPercent } from "../state/navigation";
 import { parsePrompt, type ParsedCommand } from "./commandParser";
@@ -10,7 +11,7 @@ export interface CommandSession {
 }
 
 export interface ControlCommandInput {
-  action: "ion" | "warp" | "shields" | "phasers" | "torpedo";
+  action: "ion" | "warp" | "shields" | "phasers" | "torpedo" | "self-destruct";
   course?: number;
   value?: number;
 }
@@ -32,6 +33,10 @@ function commandToLogText(command: ParsedCommand): string {
     return `PHASERS ${command.value}`;
   }
 
+  if (command.kind === "self-destruct") {
+    return "DESTRUCT";
+  }
+
   return `TORPEDO ${command.course}`;
 }
 
@@ -40,6 +45,10 @@ function appendLog(log: string[], line: string): string[] {
 }
 
 function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng): GameState {
+  if (state.endgame.terminal) {
+    throw new RangeError("Mission already ended");
+  }
+
   if (command.kind === "ion") {
     return navigate(state, { mode: "ion", course: command.course, value: command.value });
   }
@@ -55,6 +64,10 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   if (command.kind === "phasers") {
     const result = firePhasers(state, command.value, rng);
     return enemyTurn(result.state, rng);
+  }
+
+  if (command.kind === "self-destruct") {
+    return triggerSelfDestruct(state);
   }
 
   const result = fireTorpedo(state, command.course);
@@ -97,6 +110,10 @@ export function controlToPrompt(input: ControlCommandInput): string {
 
   if (input.action === "phasers") {
     return `PHASERS ${input.value ?? 0}`;
+  }
+
+  if (input.action === "self-destruct") {
+    return "DESTRUCT";
   }
 
   return `TORPEDO ${input.course ?? 0}`;

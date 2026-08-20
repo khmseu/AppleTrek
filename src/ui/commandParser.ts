@@ -3,7 +3,8 @@ export type ParsedCommand =
   | { kind: "warp"; course: number; value: number }
   | { kind: "shields"; value: number }
   | { kind: "phasers"; value: number }
-  | { kind: "torpedo"; course: number };
+  | { kind: "torpedo"; course: number }
+  | { kind: "self-destruct" };
 
 function parseInteger(input: string, label: string): number {
   const value = Number(input);
@@ -70,6 +71,13 @@ export function parsePrompt(input: string): ParsedCommand {
     return {
       kind: "torpedo",
       course: parseInteger(parts[1], "course")
+    };
+  }
+
+  if (command === "DESTRUCT" || command === "SELFDESTRUCT" || command === "SD") {
+    expectArity(parts, 1, "DESTRUCT");
+    return {
+      kind: "self-destruct"
     };
   }
 

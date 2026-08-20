@@ -53,6 +53,18 @@ export interface PositionState {
   sector: GridCoord1Based;
 }
 
+export type EndgameReason =
+  | "ongoing"
+  | "klingons-eliminated"
+  | "deadline-expired"
+  | "ship-destroyed"
+  | "self-destruct";
+
+export interface EndgameState {
+  terminal: boolean;
+  reason: EndgameReason;
+}
+
 export interface GameState {
   gridSize: number;
   mission: MissionState;
@@ -63,6 +75,7 @@ export interface GameState {
   sector: number[];
   position: PositionState;
   damage: number[];
+  endgame: EndgameState;
 }
 
 function assertGridRange(value: number, maxInclusive: number, label: string): void {
@@ -189,6 +202,10 @@ export function createInitialGameState(seed: number): GameState {
       sectorIndex,
       sector: indexToCoord1Based(sectorIndex)
     },
-    damage: Array.from({ length: 9 }, () => 0)
+    damage: Array.from({ length: 9 }, () => 0),
+    endgame: {
+      terminal: false,
+      reason: "ongoing"
+    }
   };
 }
