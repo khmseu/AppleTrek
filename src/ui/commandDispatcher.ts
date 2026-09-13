@@ -4,6 +4,8 @@ import {
   APPLE_II_ROM_CALLS,
   SeededRng
 } from "../compat/basicCompat";
+import { op_ADC, op_SBC } from "../sound";
+import { defaultSoundPlayer, type SoundPlayer } from "../sound/soundPlayer";
 import { isKlingonCell } from "../state/cells";
 import { enemyTurn, firePhasers, fireTorpedo } from "../state/combat";
 import { latchMissionOutcome, triggerSelfDestruct } from "../state/endgame";
@@ -182,7 +184,12 @@ function controlToParsed(input: ControlCommandInput): ParsedCommand {
   }
 }
 
-function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng): CommandExecution {
+function executeParsed(
+  state: GameState,
+  command: ParsedCommand,
+  rng: SeededRng,
+  soundPlayer: SoundPlayer
+): CommandExecution {
   if (state.endgame.terminal) {
     throw new RangeError("Mission already ended");
   }
@@ -215,9 +222,8 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   if (command.kind === "phasers") {
-    // Source: apple_trek.bas line 1175 (POKE R5-94,7 / R5-80,140).
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 0x07);
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 0x8c);
+    // Source: apple_trek.bas line 1175 (POKE R5-94,7 / R5-80,140 / CALL R5-95).
+    void soundPlayer.playRoutine({ p94: 7, p80: 140 });
 
     const result = firePhasers(state, command.value, rng);
     return {
@@ -258,17 +264,13 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   if (command.kind === "self-destruct") {
     // Source: apple_trek.bas lines 7005-7040 (four Apple-81 animation passes).
     for (let pass = 0; pass < 4; pass += 1) {
-      // Source: apple_trek.bas line 7020 (POKE R5-89,105 / R5-94,1 / R5-80,255).
-      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 105);
-      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 1);
-      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 255);
-      // Source: apple_trek.bas line 7030 (POKE -16304,0 / -16302,0 / CALL R5-95).
+      // Source: apple_trek.bas line 7030 (POKE -16304,0 / -16302,0).
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_TXTCLR, 0);
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_MIXCLR, 0);
-      APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
-      // Source: apple_trek.bas line 7040 (POKE -16303,0 / R5-89,233).
+      // Source: apple_trek.bas line 7020 (POKE R5-89,op_ADC / R5-94,1 / R5-80,255 / CALL R5-95).
+      void soundPlayer.playRoutine({ p94: 1, p89: op_ADC, p80: 255 });
+      // Source: apple_trek.bas line 7040 (POKE -16303,0).
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_TXTSET, 0);
-      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 233);
     }
 
     return {
@@ -277,9 +279,8 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
     };
   }
 
-  // Source: apple_trek.bas line 1170 (POKE R5-94,6 / R5-80,200).
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 0x06);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 0xc8);
+  // Source: apple_trek.bas line 1170 (POKE R5-94,6 / R5-80,200 / CALL R5-95).
+  void soundPlayer.playRoutine({ p94: 6, p80: 200 });
 
   const result = fireTorpedo(state, command.course);
   return {
@@ -291,8 +292,8 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
 /** Creates a new command session with an optional starting state and welcome log. */
 // Source: apple_trek.bas initialization and welcome flow at lines 9005-9200.
 export function createCommandSession(initialState?: GameState): CommandSession {
-  // Source: apple_trek.bas line 9090 (POKE R5-89,233 before setup input).
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 233);
+  // Source: apple_trek.bas line 9090 (POKE R5-89,op_SBC before setup input).
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, op_SBC);
 
   return {
     state: initialState ?? createInitialGameState(1701),
@@ -302,8 +303,13 @@ export function createCommandSession(initialState?: GameState): CommandSession {
 
 /** Executes an already parsed command and appends its canonical form to the log. */
 // Source: apple_trek.bas command dispatch at lines 9220-9310.
-export function dispatchParsed(session: CommandSession, command: ParsedCommand, rng: SeededRng): CommandSession {
-  const execution = executeParsed(session.state, command, rng);
+export function dispatchParsed(
+  session: CommandSession,
+  command: ParsedCommand,
+  rng: SeededRng,
+  soundPlayer: SoundPlayer = defaultSoundPlayer
+): CommandSession {
+  const execution = executeParsed(session.state, command, rng, soundPlayer);
   const nextLog = [...appendLog(session.log, `> ${formatParsedCommand(command)}`), ...execution.logLines];
   return {
     state: execution.state,
@@ -313,14 +319,17 @@ export function dispatchParsed(session: CommandSession, command: ParsedCommand, 
 
 /** Parses and executes a prompt command through the shared command path. */
 // Source: apple_trek.bas lines 9220-9310.
-export function dispatchPrompt(session: CommandSession, prompt: string, rng: SeededRng): CommandSession {
+export function dispatchPrompt(
+  session: CommandSession,
+  prompt: string,
+  rng: SeededRng,
+  soundPlayer: SoundPlayer = defaultSoundPlayer
+): CommandSession {
   // Source: apple_trek.bas line 9225 (POKE R5-80,3 / R5-94,50 / CALL R5-95).
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 3);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 50);
-  APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
+  void soundPlayer.playRoutine({ p94: 50, p80: 3 });
 
   const parsed = parsePrompt(prompt);
-  return dispatchParsed(session, parsed, rng);
+  return dispatchParsed(session, parsed, rng, soundPlayer);
 }
 
 /** Converts clickable control input to the exact prompt text used by command logs. */
@@ -332,7 +341,8 @@ export function controlToPrompt(input: ControlCommandInput): string {
 export function dispatchControl(
   session: CommandSession,
   control: ControlCommandInput,
-  rng: SeededRng
+  rng: SeededRng,
+  soundPlayer: SoundPlayer = defaultSoundPlayer
 ): CommandSession {
-  return dispatchPrompt(session, controlToPrompt(control), rng);
+  return dispatchPrompt(session, controlToPrompt(control), rng, soundPlayer);
 }

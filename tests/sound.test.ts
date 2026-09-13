@@ -41,7 +41,7 @@ describe("6502 Sound Routine Simulation", () => {
     expect(result.toggles.length).toBe(50 * 3);
   });
 
-  it("simulates self-destruct sweep with ADC #1 opcode (p89=105)", () => {
+  it("simulates self-destruct sweep with ADC #1 opcode (p89=op_ADC)", () => {
     const result = simulate6502Sound(APPLE_TREK_SOUND_PRESETS.SELF_DESTRUCT);
     expect(result.durationSec).toBeGreaterThan(0.15);
     expect(result.durationSec).toBeLessThan(0.20);

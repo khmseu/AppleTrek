@@ -29,31 +29,6 @@ function numberFromInput(input: HTMLInputElement): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-function playSoundForAction(action: string, soundPlayer: SoundPlayer): void {
-  if (action === "phasers") {
-    void soundPlayer.play("phaser");
-  } else if (action === "torpedo") {
-    void soundPlayer.play("torpedo");
-  } else if (action === "self-destruct") {
-    void soundPlayer.play("destruct");
-  } else {
-    void soundPlayer.play("prompt");
-  }
-}
-
-function playSoundForPrompt(prompt: string, soundPlayer: SoundPlayer): void {
-  const normalized = prompt.trim().toUpperCase();
-  if (normalized.startsWith("PHAS") || normalized.startsWith("4")) {
-    void soundPlayer.play("phaser");
-  } else if (normalized.startsWith("TORP") || normalized.startsWith("5")) {
-    void soundPlayer.play("torpedo");
-  } else if (normalized.startsWith("SELF") || normalized.startsWith("DESTRUCT") || normalized.startsWith("9")) {
-    void soundPlayer.play("destruct");
-  } else {
-    void soundPlayer.play("prompt");
-  }
-}
-
 export interface MountTerminalOptions {
   soundPlayer?: SoundPlayer;
 }
@@ -303,10 +278,8 @@ export function mountBrowserTerminal(app: HTMLElement, options?: MountTerminalOp
       return;
     }
 
-    playSoundForPrompt(prompt, soundPlayer);
-
     try {
-      session = dispatchPrompt(session, prompt, rng);
+      session = dispatchPrompt(session, prompt, rng, soundPlayer);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Command failed";
       session = appendError(session, message);
@@ -331,8 +304,6 @@ export function mountBrowserTerminal(app: HTMLElement, options?: MountTerminalOp
         render();
         return;
       }
-
-      playSoundForAction(action, soundPlayer);
 
       let control: ControlCommandInput;
 
@@ -364,7 +335,7 @@ export function mountBrowserTerminal(app: HTMLElement, options?: MountTerminalOp
       }
 
       try {
-        session = dispatchControl(session, control, rng);
+        session = dispatchControl(session, control, rng, soundPlayer);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Command failed";
         session = appendError(session, message);

@@ -17,6 +17,8 @@
  *   3B17: RTS
  */
 
+export const op_ADC = 105; // ADC #1 opcode value in ($69) decimal
+export const op_SBC = 233; // SBC #1 opcode value in ($E9) decimal
 export interface SoundRoutineParams {
   /** Outer loop counter (Y register immediate argument at $3B03 / R5-94). */
   p94: number;
@@ -43,35 +45,35 @@ export interface SoundSimulationResult {
 export const APPLE_TREK_SOUND_PRESETS = Object.freeze({
   PHASER: Object.freeze({
     p94: 7,
-    p89: 233,
+    p89: op_SBC,
     p80: 140,
     filename: "phaser.wav",
     description: "Phaser firing sweep (apple_trek.bas line 1175)"
   }),
   PHOTON_TORPEDO: Object.freeze({
     p94: 6,
-    p89: 233,
+    p89: op_SBC,
     p80: 200,
     filename: "torpedo.wav",
     description: "Photon torpedo movement chirp (apple_trek.bas line 1170)"
   }),
   TORPEDO_HIT: Object.freeze({
     p94: 1,
-    p89: 233,
+    p89: op_SBC,
     p80: 180,
     filename: "hit.wav",
     description: "Torpedo impact / explosion burst (apple_trek.bas line 1200)"
   }),
   COMMAND_BEEP: Object.freeze({
     p94: 50,
-    p89: 233,
+    p89: op_SBC,
     p80: 3,
     filename: "prompt.wav",
     description: "Command prompt alert tone (apple_trek.bas line 9225)"
   }),
   SELF_DESTRUCT: Object.freeze({
     p94: 1,
-    p89: 105,
+    p89: op_ADC,
     p80: 255,
     filename: "destruct.wav",
     description: "Self-destruct upward sweep pass (apple_trek.bas line 7020)"
@@ -84,8 +86,8 @@ export type SoundPresetName = keyof typeof APPLE_TREK_SOUND_PRESETS;
  * Simulates the 6502 execution cycle-by-cycle and records the timestamp of each speaker click.
  */
 export function simulate6502Sound(params: SoundRoutineParams): SoundSimulationResult {
-  const { p94, p89 = 233, p80, clockHz = 1_000_000 } = params;
-  const isAdc = (p89 & 0xff) === 105;
+  const { p94, p89 = op_SBC, p80, clockHz = 1_000_000 } = params;
+  const isAdc = (p89 & 0xff) === op_ADC;
 
   let y = p94 & 0xff;
   let totalCycles = 2; // LDY #p94
