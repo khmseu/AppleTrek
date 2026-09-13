@@ -1,0 +1,72 @@
+
+                   ; 
+                   ; Token $10 HIMEM:
+                   ; 
+f04d: 20 15 e7     VHIMEM          jsr     GET16BIT
+f050: 86 d8                        stx     XSAVE
+f052: a2 fe                        ldx     #$fe
+f054: 38                           sec
+f055: b5 d0        @Loop1          lda     ACC+2,x           ;P2 = ACC
+f057: 95 e6                        sta     P2+2,x
+f059: b5 4e                        lda     HIMEM+2,x         ;AUX = HIMEM - ACC
+f05b: f5 d0                        sbc     ACC+2,x
+f05d: 95 dc                        sta     AUX+2,x
+f05f: e8                           inx
+f060: d0 f3                        bne     @Loop1
+f062: 90 4b                        bcc     LF0AF
+                   ; 
+f064: ca                           dex                       ;X-reg = $ff
+f065: b5 cb        @Loop2          lda     PP+1,x            ;P3 = PP
+f067: 95 e7                        sta     P3+1,x
+f069: f5 db                        sbc     AUX+1,x           ;P2 = PP - AUX
+f06b: 95 e5                        sta     P2+1,x
+f06d: e8                           inx
+f06e: f0 f5                        beq     @Loop2            ;compare PV to P2
+f070: 90 0a                        bcc     JmpMEMFULL
+f072: a5 cc                        lda     PV
+f074: c5 e4                        cmp     P2
+f076: a5 cd                        lda     PV+1
+f078: e5 e5                        sbc     P2+1
+f07a: 90 13                        bcc     @NoInc3
+f07c: 4c 6b e3     JmpMEMFULL      jmp     MEMFULL
+
+f07f: b1 e6        @Loop           lda     (P3),y
+f081: 91 e4                        sta     (P2),y
+f083: e6 e4                        inc     P2
+f085: d0 02                        bne     @NoInc2
+f087: e6 e5                        inc     P2+1
+f089: e6 e6        @NoInc2         inc     P3
+f08b: d0 02                        bne     @NoInc3
+f08d: e6 e7                        inc     P3+1
+f08f: a5 e6        @NoInc3         lda     P3                ;compare P3 and HIMEM
+f091: c5 4c                        cmp     HIMEM
+f093: a5 e7                        lda     P3+1
+f095: e5 4d                        sbc     HIMEM+1
+f097: 90 e6                        bcc     @Loop
+                   ; 
+f099: a2 fe        LF099           ldx     #$fe
+f09b: b5 e6        @Loop           lda     P2+2,x            ;P2 = HIMEM
+f09d: 95 4e                        sta     HIMEM+2,x
+f09f: b5 cc                        lda     PP+2,x            ;PP = PP - AUX
+f0a1: f5 dc                        sbc     AUX+2,x
+f0a3: 95 cc                        sta     PP+2,x
+f0a5: e8                           inx
+f0a6: d0 f3                        bne     @Loop
+f0a8: a6 d8                        ldx     XSAVE
+f0aa: 60                           rts
+
+f0ab: b1 4c        LF0AB           lda     (HIMEM),y
+f0ad: 91 ce                        sta     (ACC),y
+f0af: a5 ce        LF0AF           lda     ACC
+f0b1: d0 02                        bne     @NoInc
+f0b3: c6 cf                        dec     ACC+1
+f0b5: c6 ce        @NoInc          dec     ACC
+f0b7: a5 4c                        lda     HIMEM
+f0b9: d0 02                        bne     @NoInc
+f0bb: c6 4d                        dec     HIMEM+1
+f0bd: c6 4c        @NoInc          dec     HIMEM
+f0bf: c5 ca                        cmp     PP                ;compare PP to HIMEM
+f0c1: a5 4d                        lda     HIMEM+1
+f0c3: e5 cb                        sbc     PP+1
+f0c5: 90 e4                        bcc     LF0AB
+f0c7: b0 d0                        bcs     LF099             ;(always)
