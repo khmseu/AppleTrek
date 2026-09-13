@@ -42,10 +42,10 @@ export function mountBrowserTerminal(app: HTMLElement): void {
   // TEXT
   setWindow(0, 40, 0, 24);
   tabHV(1,13);
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.HOME);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_HOME);
 
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDLFT, 0x00);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDWDTH, 0x28);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDLFT, 0x00);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDWDTH, 0x28);
 
   const rng = new SeededRng(1701);
   let session = createCommandSession();
@@ -240,8 +240,8 @@ export function mountBrowserTerminal(app: HTMLElement): void {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    APPLE_II_MACHINE.peek(APPLE_II_MEMORY.KBD);
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.KBDSTRB, 0x00);
+    APPLE_II_MACHINE.peek(APPLE_II_MEMORY.IO_KBD);
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_KBDSTRB, 0x00);
 
     const prompt = commandInput.value.trim();
     if (prompt.length === 0) {
@@ -261,8 +261,8 @@ export function mountBrowserTerminal(app: HTMLElement): void {
 
   app.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
-      APPLE_II_MACHINE.peek(APPLE_II_MEMORY.KBD);
-      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.KBDSTRB, 0x00);
+      APPLE_II_MACHINE.peek(APPLE_II_MEMORY.IO_KBD);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_KBDSTRB, 0x00);
 
       const action = button.dataset.action;
       if (!action) {

@@ -195,8 +195,8 @@ describe("Phase 5 command routing", () => {
     dispatchPrompt(session, "COMPUTER", new SeededRng(1));
     dispatchPrompt(session, "PROBE", new SeededRng(1));
 
-    expect(calls).toContain(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
-    expect(pokes).toContainEqual([APPLE_II_MEMORY.WNDTOP, 0x0d]);
+    expect(calls).toContain(APPLE_II_ROM_CALLS.MON_CLREOL);
+    expect(pokes).toContainEqual([APPLE_II_MEMORY.ZP_WNDTOP, 0x0d]);
     expect(pokes).toContainEqual([APPLE_II_MEMORY.SPRITE_VECTOR, 0x01]);
 
     APPLE_II_MACHINE.call = originalCall;

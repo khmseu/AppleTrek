@@ -84,14 +84,14 @@ export function basicOr(a: unknown, b: unknown): number {
 /** Apple II zero-page and soft-switch addresses touched by the original BASIC source. */
 // Source: apple_trek.bas lines 600-7040, especially 600-690 and 2500-2510.
 export const APPLE_II_MEMORY = Object.freeze({
-  WNDLFT:              0x20, // 32
-  WNDWDTH:             0x21, // 33
-  WNDTOP:              0x22, // 34
-  WNDBTM:              0x23, // 35
-  CH:                  0x2c, // 44??
-  CV:                  0x2d, // 45??
-  INVERSE:             0x2e, // 46
-  TEXT_COLOR:          0x32, // 50
+  ZP_WNDLFT:           0x20, // 32
+  ZP_WNDWDTH:          0x21, // 33
+  ZP_WNDTOP:           0x22, // 34
+  ZP_WNDBTM:           0x23, // 35
+  ZP_CH:               0x24, // 36
+  ZP_CV:               0x25, // 37
+  ZP_MASK:             0x2e, // 46
+  ZP_INVFLG:           0x32, // 50
 
   SPRITE_VECTOR:     0x3fa1, // 16161 R5 - 223
   SPRITE_COLOR:      0x3fa2, // 16162 R5 - 222
@@ -107,20 +107,20 @@ export const APPLE_II_MEMORY = Object.freeze({
   X65:               0x3fbf, // 16319 R5 - 65
   HIMEM:             0x4000, // 16384 R5
 
-  KBD:               0xc000, // -16384
-  KBDSTRB:           0xc010, // -16368
-  TXTCLR:            0xc050, // -16336
-  TXTSET:            0xc051, // -16335
-  MIXCLR:            0xc052, // -16334
+  IO_KBD:            0xc000, // -16384
+  IO_KBDSTRB:        0xc010, // -16368
+  IO_TXTCLR:         0xc050, // -16336
+  IO_TXTSET:         0xc051, // -16335
+  IO_MIXCLR:         0xc052, // -16334
 } as const);
 
 /** Apple II ROM routines called by the original BASIC source. */
 // Source: apple_trek.bas lines 600, 610, 620, 660, 690, 1000-1145, and 7030-7040.
 export const APPLE_II_ROM_CALLS = Object.freeze({
-  SET_INVERSE_TEXT: 0xfe80, // -128
-  SET_NORMAL_TEXT: 0xfe84, // -124
-  CLEAR_TO_EOL: 0xfc9c, // -900
-  HOME: 0xfc58, // -936
+  MON_HOME:    0xfc58, // -936
+  MON_CLREOL:  0xfc9c, // -868
+  MON_SETINV:  0xfe80, // -384
+  MON_SETNORM: 0xfe84, // -380
 } as const);
 
 /**
@@ -137,15 +137,15 @@ export function setWindow(
   top: number,
   bottom: number,
 ): void {
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDLFT, left);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDWDTH, width);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDTOP, top);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDBTM, bottom);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDLFT, left);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDWDTH, width);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDTOP, top);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDBTM, bottom);
 } 
 
 export function tabHV(horizontal: number, vertical: number): void {
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.CH, horizontal);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.CV, vertical);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_CH, horizontal);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_CV, vertical);
 }
 
 /**

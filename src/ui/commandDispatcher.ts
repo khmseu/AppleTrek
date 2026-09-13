@@ -87,7 +87,7 @@ function formatDamageDuration(value: number): string {
 }
 
 function damageReportLines(state: GameState): string[] {
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_CLREOL);
 
   const damaged = state.damage
     .map((value, index) => ({ value, label: DAMAGE_LABELS[index] ?? `DEVICE ${index + 1}` }))
@@ -98,8 +98,8 @@ function damageReportLines(state: GameState): string[] {
 }
 
 function computerReportLines(state: GameState): string[] {
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.WNDTOP, 0x0d);
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.CLEAR_TO_EOL);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.ZP_WNDTOP, 0x0d);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_CLREOL);
 
   return [
     "COMPUTER REPORT",
@@ -215,6 +215,7 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   if (command.kind === "phasers") {
+    // Source: apple_trek.bas line 1175 (POKE R5-94,7 / R5-80,140).
     APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x01);
     APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xb4);
 
@@ -255,7 +256,14 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   if (command.kind === "self-destruct") {
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.TONE_LATCH, 0xff);
+    // Source: apple_trek.bas lines 7005-7040 (four Apple-81 animation passes).
+    for (let pass = 0; pass < 4; pass += 1) {
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 105);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 1);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 255);
+      APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 233);
+    }
 
     return {
       state: triggerSelfDestruct(state),
@@ -263,6 +271,7 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
     };
   }
 
+  // Source: apple_trek.bas line 1170 (POKE R5-94,6 / R5-80,200).
   APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x06);
   APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xc8);
 
@@ -276,6 +285,9 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
 /** Creates a new command session with an optional starting state and welcome log. */
 // Source: apple_trek.bas initialization and welcome flow at lines 9005-9200.
 export function createCommandSession(initialState?: GameState): CommandSession {
+  // Source: apple_trek.bas line 9090 (POKE R5-89,233 before setup input).
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 233);
+
   return {
     state: initialState ?? createInitialGameState(1701),
     log: ["WELCOME TO APPLE TREK"]
@@ -296,6 +308,11 @@ export function dispatchParsed(session: CommandSession, command: ParsedCommand, 
 /** Parses and executes a prompt command through the shared command path. */
 // Source: apple_trek.bas lines 9220-9310.
 export function dispatchPrompt(session: CommandSession, prompt: string, rng: SeededRng): CommandSession {
+  // Source: apple_trek.bas line 9225 (POKE R5-80,3 / R5-94,50 / CALL R5-95).
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 3);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 50);
+  APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
+
   const parsed = parsePrompt(prompt);
   return dispatchParsed(session, parsed, rng);
 }

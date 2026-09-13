@@ -1,6 +1,6 @@
-import { APPLE_II_MACHINE, APPLE_II_ROM_CALLS } from "../compat/basicCompat";
+import { APPLE_II_MACHINE, APPLE_II_MEMORY, APPLE_II_ROM_CALLS } from "../compat/basicCompat";
 import { type GameState } from "../state/gameState";
-import { sectorGlyph } from "../state/cells";
+import { SHIP_CELL, sectorGlyph } from "../state/cells";
 
 function pad(value: number): string {
   return value.toString().padStart(2, "0");
@@ -13,8 +13,8 @@ function formatTickClock(stardate: number, ticks: number): string {
 /** Renders the compact status panel shown beside the sector grid. */
 // Source: apple_trek.bas status display at lines 1030-1080.
 export function renderStatusPanel(state: GameState): string {
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_SETINV);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_SETNORM);
 
   const lines = [
     "STATUS",
@@ -42,8 +42,8 @@ export function renderStatusPanel(state: GameState): string {
  * Source: apple_trek.bas sector display at lines 1000-1025 and cell rendering at 1120-1145.
  */
 export function renderSectorPanel(state: GameState): string {
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_INVERSE_TEXT);
-  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.SET_NORMAL_TEXT);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_SETINV);
+  APPLE_II_MACHINE.call(APPLE_II_ROM_CALLS.MON_SETNORM);
 
   const expectedCellCount = state.sectorSize * state.sectorSize;
   if (state.sector.length !== expectedCellCount) {
@@ -60,7 +60,12 @@ export function renderSectorPanel(state: GameState): string {
     const cells: string[] = [];
     for (let col = 1; col <= state.sectorSize; col += 1) {
       const index = (row - 1) * state.sectorSize + (col - 1);
-      cells.push(sectorGlyph(state.sector[index]));
+      const cell = state.sector[index];
+      // Source: apple_trek.bas line 1115 (CALL R5-95 before non-Enterprise glyphs).
+      if (cell !== SHIP_CELL) {
+        APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
+      }
+      cells.push(sectorGlyph(cell));
     }
     lines.push(`${row} ${cells.join(" ")}`);
   }

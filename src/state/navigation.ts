@@ -330,6 +330,10 @@ export function navigate(state: GameState, input: NavigateInput): GameState {
     }
   };
 
+  // Source: apple_trek.bas line 1200 (POKE R5-94,1 / R5-80,180).
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 1);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 180);
+
   const movementSteps = input.mode === "ion" ? input.value : input.value;
   const moved = stepMovement(withEnergyCost, vector, movementSteps);
 
