@@ -6,6 +6,7 @@ import {
   setWindow,
   tabHV
 } from "../compat/basicCompat";
+import { defaultSoundPlayer, SoundPlayer } from "../sound/soundPlayer";
 import {
   createCommandSession,
   dispatchControl,
@@ -28,6 +29,35 @@ function numberFromInput(input: HTMLInputElement): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+function playSoundForAction(action: string, soundPlayer: SoundPlayer): void {
+  if (action === "phasers") {
+    void soundPlayer.play("phaser");
+  } else if (action === "torpedo") {
+    void soundPlayer.play("torpedo");
+  } else if (action === "self-destruct") {
+    void soundPlayer.play("destruct");
+  } else {
+    void soundPlayer.play("prompt");
+  }
+}
+
+function playSoundForPrompt(prompt: string, soundPlayer: SoundPlayer): void {
+  const normalized = prompt.trim().toUpperCase();
+  if (normalized.startsWith("PHAS") || normalized.startsWith("4")) {
+    void soundPlayer.play("phaser");
+  } else if (normalized.startsWith("TORP") || normalized.startsWith("5")) {
+    void soundPlayer.play("torpedo");
+  } else if (normalized.startsWith("SELF") || normalized.startsWith("DESTRUCT") || normalized.startsWith("9")) {
+    void soundPlayer.play("destruct");
+  } else {
+    void soundPlayer.play("prompt");
+  }
+}
+
+export interface MountTerminalOptions {
+  soundPlayer?: SoundPlayer;
+}
+
 /**
  * Mounts the complete browser terminal UI into an existing application element.
  *
@@ -38,7 +68,9 @@ function numberFromInput(input: HTMLInputElement): number {
  *
  * @throws {Error} When expected DOM nodes cannot be found after template setup.
  */
-export function mountBrowserTerminal(app: HTMLElement): void {
+export function mountBrowserTerminal(app: HTMLElement, options?: MountTerminalOptions): void {
+  const soundPlayer = options?.soundPlayer ?? defaultSoundPlayer;
+
   // TEXT
   setWindow(0, 40, 0, 24);
   tabHV(1,13);
@@ -54,7 +86,10 @@ export function mountBrowserTerminal(app: HTMLElement): void {
   app.innerHTML = `
     <section class="terminal-shell" aria-label="Apple Trek terminal">
       <header class="terminal-header">
-        <h1>APPLE TREK</h1>
+        <div class="terminal-title-row">
+          <h1>APPLE TREK</h1>
+          <button type="button" id="sound-toggle" class="sound-toggle" aria-label="Toggle sound">SOUND: ${soundPlayer.isEnabled() ? "ON" : "OFF"}</button>
+        </div>
         <p>Retro command deck</p>
       </header>
       <div class="terminal-grid">
@@ -113,6 +148,17 @@ export function mountBrowserTerminal(app: HTMLElement): void {
         box-shadow: 0 0 30px rgba(72, 199, 104, 0.25);
         background: rgba(3, 10, 5, 0.9);
         padding: 1rem;
+      }
+
+      .terminal-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .sound-toggle {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
       }
 
       .terminal-header h1 {
@@ -238,6 +284,15 @@ export function mountBrowserTerminal(app: HTMLElement): void {
     logPanel.textContent = renderOutputLog(session.log);
   };
 
+  const soundToggle = app.querySelector<HTMLButtonElement>("#sound-toggle");
+
+  if (soundToggle) {
+    soundToggle.addEventListener("click", () => {
+      const enabled = soundPlayer.toggle();
+      soundToggle.textContent = `SOUND: ${enabled ? "ON" : "OFF"}`;
+    });
+  }
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     APPLE_II_MACHINE.peek(APPLE_II_MEMORY.IO_KBD);
@@ -247,6 +302,8 @@ export function mountBrowserTerminal(app: HTMLElement): void {
     if (prompt.length === 0) {
       return;
     }
+
+    playSoundForPrompt(prompt, soundPlayer);
 
     try {
       session = dispatchPrompt(session, prompt, rng);
@@ -274,6 +331,8 @@ export function mountBrowserTerminal(app: HTMLElement): void {
         render();
         return;
       }
+
+      playSoundForAction(action, soundPlayer);
 
       let control: ControlCommandInput;
 

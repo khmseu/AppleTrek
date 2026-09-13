@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "generate:sounds": "node scripts/generateSounds.ts",
     "preview": "vite preview",
     "test": "vitest run"
   },
