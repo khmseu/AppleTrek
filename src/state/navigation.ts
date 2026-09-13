@@ -75,7 +75,7 @@ function assertGalaxySizeMatchesQuadrants(state: GameState): void {
 }
 
 function courseComponent(c2: number): number {
-  APPLE_II_MACHINE.peek(APPLE_II_MEMORY.COURSE_TABLE_BASE + c2);
+  APPLE_II_MACHINE.peek(APPLE_II_MEMORY.X65 + c2);
 
   const c3 =
     167 * c2 -

@@ -42,18 +42,18 @@ export interface SoundSimulationResult {
 /** Standard sound effect presets used in Apple Trek. */
 export const APPLE_TREK_SOUND_PRESETS = Object.freeze({
   PHASER: Object.freeze({
-    p94: 6,
-    p89: 233,
-    p80: 200,
-    filename: "phaser.wav",
-    description: "Phaser firing sweep (apple_trek.bas line 1170)"
-  }),
-  PHOTON_TORPEDO: Object.freeze({
     p94: 7,
     p89: 233,
     p80: 140,
+    filename: "phaser.wav",
+    description: "Phaser firing sweep (apple_trek.bas line 1175)"
+  }),
+  PHOTON_TORPEDO: Object.freeze({
+    p94: 6,
+    p89: 233,
+    p80: 200,
     filename: "torpedo.wav",
-    description: "Photon torpedo movement chirp (apple_trek.bas line 1175)"
+    description: "Photon torpedo movement chirp (apple_trek.bas line 1170)"
   }),
   TORPEDO_HIT: Object.freeze({
     p94: 1,

@@ -93,12 +93,6 @@ export const APPLE_II_MEMORY = Object.freeze({
   ZP_MASK:             0x2e, // 46
   ZP_INVFLG:           0x32, // 50
 
-  SPRITE_VECTOR:     0x3fa1, // 16161 R5 - 223
-  SPRITE_COLOR:      0x3fa2, // 16162 R5 - 222
-  TONE_LATCH:        0x3fa7, // 16167 R5 - 217
-  SPRITE_SPEED:      0x3fb0, // 16176 R5 - 208
-  COURSE_TABLE_BASE: 0x3fbf, // 16191 R5 - 193
-
   C95:               0x3fa1, // 16289 R5 - 95
 
   X94:               0x3fa2, // 16290 R5 - 94
@@ -109,9 +103,9 @@ export const APPLE_II_MEMORY = Object.freeze({
 
   IO_KBD:            0xc000, // -16384
   IO_KBDSTRB:        0xc010, // -16368
-  IO_TXTCLR:         0xc050, // -16336
-  IO_TXTSET:         0xc051, // -16335
-  IO_MIXCLR:         0xc052, // -16334
+  IO_TXTCLR:         0xc050, // -16304
+  IO_TXTSET:         0xc051, // -16303
+  IO_MIXCLR:         0xc052, // -16302
 } as const);
 
 /** Apple II ROM routines called by the original BASIC source. */

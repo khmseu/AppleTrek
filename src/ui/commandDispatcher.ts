@@ -111,8 +111,8 @@ function computerReportLines(state: GameState): string[] {
 }
 
 function probeReportLines(state: GameState): string[] {
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x01);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0x32);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.C95, 0x01);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 0x32);
 
   const klingons = state.sector
     .map((cell, index) => ({ cell, index: index + 1 }))
@@ -126,7 +126,7 @@ function probeReportLines(state: GameState): string[] {
 }
 
 function loadTorpedoes(state: GameState, amount: number): GameState {
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.TONE_LATCH, 0xff);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 0xff);
 
   const nextTorpedoes = state.ship.torpedoes + amount;
   if (nextTorpedoes < 0 || nextTorpedoes > state.ship.torpedoesMax) {
@@ -216,8 +216,8 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
 
   if (command.kind === "phasers") {
     // Source: apple_trek.bas line 1175 (POKE R5-94,7 / R5-80,140).
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x01);
-    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xb4);
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 0x07);
+    APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 0x8c);
 
     const result = firePhasers(state, command.value, rng);
     return {
@@ -258,10 +258,16 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   if (command.kind === "self-destruct") {
     // Source: apple_trek.bas lines 7005-7040 (four Apple-81 animation passes).
     for (let pass = 0; pass < 4; pass += 1) {
+      // Source: apple_trek.bas line 7020 (POKE R5-89,105 / R5-94,1 / R5-80,255).
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 105);
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 1);
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 255);
+      // Source: apple_trek.bas line 7030 (POKE -16304,0 / -16302,0 / CALL R5-95).
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_TXTCLR, 0);
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_MIXCLR, 0);
       APPLE_II_MACHINE.call(APPLE_II_MEMORY.C95);
+      // Source: apple_trek.bas line 7040 (POKE -16303,0 / R5-89,233).
+      APPLE_II_MACHINE.poke(APPLE_II_MEMORY.IO_TXTSET, 0);
       APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X89, 233);
     }
 
@@ -272,8 +278,8 @@ function executeParsed(state: GameState, command: ParsedCommand, rng: SeededRng)
   }
 
   // Source: apple_trek.bas line 1170 (POKE R5-94,6 / R5-80,200).
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_VECTOR, 0x06);
-  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.SPRITE_SPEED, 0xc8);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X94, 0x06);
+  APPLE_II_MACHINE.poke(APPLE_II_MEMORY.X80, 0xc8);
 
   const result = fireTorpedo(state, command.course);
   return {

@@ -197,7 +197,7 @@ describe("Phase 5 command routing", () => {
 
     expect(calls).toContain(APPLE_II_ROM_CALLS.MON_CLREOL);
     expect(pokes).toContainEqual([APPLE_II_MEMORY.ZP_WNDTOP, 0x0d]);
-    expect(pokes).toContainEqual([APPLE_II_MEMORY.SPRITE_VECTOR, 0x01]);
+    expect(pokes).toContainEqual([APPLE_II_MEMORY.C95, 0x01]);
 
     APPLE_II_MACHINE.call = originalCall;
     APPLE_II_MACHINE.poke = originalPoke;

@@ -40,7 +40,7 @@ describe("courseToVector", () => {
 
     courseToVector(45);
 
-    expect(addresses).toContain(APPLE_II_MEMORY.COURSE_TABLE_BASE + 45);
+    expect(addresses).toContain(APPLE_II_MEMORY.X65 + 45);
     APPLE_II_MACHINE.peek = originalPeek;
   });
 

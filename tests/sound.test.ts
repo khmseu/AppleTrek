@@ -13,18 +13,18 @@ import { mountBrowserTerminal } from "../src/ui/browserTerminal";
 describe("6502 Sound Routine Simulation", () => {
   it("simulates phaser sound timing accurately at 1 MHz", () => {
     const result = simulate6502Sound(APPLE_TREK_SOUND_PRESETS.PHASER);
-    expect(result.durationSec).toBeGreaterThan(0.6);
-    expect(result.durationSec).toBeLessThan(0.65);
-    expect(result.toggles.length).toBe(6 * 200); // 6 sweeps of 200 steps
+    expect(result.durationSec).toBeGreaterThan(0.35);
+    expect(result.durationSec).toBeLessThan(0.40);
+    expect(result.toggles.length).toBe(7 * 140);
     expect(result.toggles[0].state).toBe(-1);
     expect(result.toggles[1].state).toBe(1);
   });
 
   it("simulates photon torpedo sound timing accurately", () => {
     const result = simulate6502Sound(APPLE_TREK_SOUND_PRESETS.PHOTON_TORPEDO);
-    expect(result.durationSec).toBeGreaterThan(0.35);
-    expect(result.durationSec).toBeLessThan(0.40);
-    expect(result.toggles.length).toBe(7 * 140);
+    expect(result.durationSec).toBeGreaterThan(0.6);
+    expect(result.durationSec).toBeLessThan(0.65);
+    expect(result.toggles.length).toBe(6 * 200); // 6 sweeps of 200 steps
   });
 
   it("simulates torpedo hit burst timing", () => {

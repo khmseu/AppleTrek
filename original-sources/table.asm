@@ -1,0 +1,76 @@
+
+3B20:                          ;* control $3b20 data
+3B20: b4                       R5_65:      .byte  $B4
+3B21: b4                       .byte  $B4
+3B22: b4                       .byte  $B4
+3B23: b4                       .byte  $B4
+3B24: b4                       .byte  $B4
+3B25: b4                       .byte  $B4
+3B26: b4                       .byte  $B4
+3B27: b4                       .byte  $B4
+3B28:                          ;* control $3b28 data
+3B28: 5a                       .byte  $5A
+3B29: 87                       .byte  $87
+3B2A: 99                       .byte  $99
+3B2B: a2                       .byte  $A2
+3B2C: a6                       .byte  $A6
+3B2D: a9                       .byte  $A9
+3B2E: ab                       .byte  $AB
+3B2F: ac                       .byte  $AC
+3B30:                          ;* control $3b30 data
+3B30: 5a                       .byte  $5A
+3B31: 75                       .byte  $75
+3B32: 87                       .byte  $87
+3B33: 92                       .byte  $92
+3B34: 99                       .byte  $99
+3B35: 9e                       .byte  $9E
+3B36: a2                       .byte  $A2
+3B37: a4                       .byte  $A4
+3B38:                          ;* control $3b38 data
+3B38: 5a                       .byte  $5A
+3B39: 6c                       .byte  $6C
+3B3A: 7c                       .byte  $7C
+3B3B: 87                       .byte  $87
+3B3C: 8f                       .byte  $8F
+3B3D: 95                       .byte  $95
+3B3E: 99                       .byte  $99
+3B3F: 9d                       .byte  $9D
+3B40:                          ;* control $3b40 data
+3B40: 5a                       .byte  $5A
+3B41: 68                       .byte  $68
+3B42: 75                       .byte  $75
+3B43: 7f                       .byte  $7F
+3B44: 87                       .byte  $87
+3B45: 8d                       .byte  $8D
+3B46: 92                       .byte  $92
+3B47: 96                       .byte  $96
+3B48:                          ;* control $3b48 data
+3B48: 5a                       .byte  $5A
+3B49: 65                       .byte  $65
+3B4A: 70                       .byte  $70
+3B4B: 79                       .byte  $79
+3B4C: 81                       .byte  $81
+3B4D: 87                       .byte  $87
+3B4E: 8c                       .byte  $8C
+3B4F: 90                       .byte  $90
+3B50:                          ;* control $3b50 data
+3B50: 5a                       .byte  $5A
+3B51: 63                       .byte  $63
+3B52: 6c                       .byte  $6C
+3B53: 75                       .byte  $75
+3B54: 7c                       .byte  $7C
+3B55: 82                       .byte  $82
+3B56: 87                       .byte  $87
+3B57: 8b                       .byte  $8B
+3B58:                          ;* control $3b58 data
+3B58: 5a                       .byte  $5A
+3B59: 62                       .byte  $62
+3B5A: 6a                       .byte  $6A
+3B5B: 71                       .byte  $71
+3B5C: 78                       .byte  $78
+3B5D: 7e                       .byte  $7E
+3B5E: 83                       .byte  $83
+3B5F: 87                       .byte  $87
+3B60:                          ;* control $3b60 data
+3B60: 01                       X3B60:      .byte  $01
+3B61:                          R5:
